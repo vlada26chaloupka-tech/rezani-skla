@@ -19,6 +19,7 @@
   --waste-bg:#F4EBE6; --waste-line:#DDBBAC; --trim:#E5D2C8;
   --cut:#0E6B59; --remnant:#2860A3;
   --good:#256F45; --good-soft:#D8EEDF; --warn:#8F5A0C; --warn-soft:#F8E8C8; --bad:#A8231B; --bad-soft:#F7DEDB;
+  --on-good:#FFFFFF; --on-bad:#FFFFFF;
   --f-display:"Archivo","Arial Narrow","Helvetica Neue",Arial,sans-serif;
   --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
@@ -34,6 +35,7 @@
     --waste-bg:#1E1917; --waste-line:#46342D; --trim:#33261F;
     --cut:#4CC3A6; --remnant:#72A9EA;
     --good:#6FCF97; --good-soft:#173324; --warn:#E9B45A; --warn-soft:#33270F; --bad:#F08A80; --bad-soft:#3A1916;
+    --on-good:#06210F; --on-bad:#2A0D0A;
   }
 }
 :root[data-theme="dark"]{
@@ -46,6 +48,7 @@
   --waste-bg:#1E1917; --waste-line:#46342D; --trim:#33261F;
   --cut:#4CC3A6; --remnant:#72A9EA;
   --good:#6FCF97; --good-soft:#173324; --warn:#E9B45A; --warn-soft:#33270F; --bad:#F08A80; --bad-soft:#3A1916;
+  --on-good:#06210F; --on-bad:#2A0D0A;
 }
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -204,12 +207,37 @@ tbody tr.pin td{background:var(--hi-soft)}
 .sref{border:0;background:none;color:var(--accent);font:600 12.5px var(--f-mono);padding:0 3px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .sref-g{color:var(--ink-3);font-size:12px;margin-right:2px}
 .copybox{width:100%;min-height:90px;font:12px var(--f-mono)}
+.work{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.work-l{display:flex;flex-direction:column;gap:1px}
+.work-v{font-size:14px;color:var(--ink-2)}
+.work-v b{font-family:var(--f-display);font-size:26px;font-weight:760;font-stretch:88%;color:var(--ink);font-variant-numeric:tabular-nums}
+.wbar{flex:1 1 140px;min-width:120px;height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.wbar i{display:block;height:100%;background:var(--good);transition:width .2s}
+.work-o{font-size:13.5px;color:var(--ink-2)}
+.work-o b{color:var(--ink)}
+.confirm{display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13.5px}
+.btn-quiet{border-color:transparent;background:transparent;color:var(--ink-2);text-decoration:underline;text-underline-offset:2px;padding-inline:4px}
+.btn-danger{background:var(--bad);border-color:var(--bad);color:var(--on-bad)}
+.btn-danger:hover{color:var(--on-bad);filter:brightness(1.08)}
+.results[data-filter="todo"] .sheet.done,.results[data-filter="done"] .sheet:not(.done){display:none}
+.sheet.done{border-color:var(--good);box-shadow:inset 0 0 0 1px var(--good)}
+.sheet.done .sv{opacity:.38;filter:grayscale(.7)}
+.sh-f{justify-content:space-between;align-items:center}
+.cutbtn{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 12px 6px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-weight:700;font-size:13.5px;cursor:pointer;transition:border-color .15s,color .15s,background-color .15s}
+.cutbtn:hover{border-color:var(--good);color:var(--good)}
+.cutbtn .tick{width:18px;height:18px;flex:none;border:1.5px solid currentColor;border-radius:4px;display:inline-grid;place-items:center;font-size:13px;line-height:1}
+.cutbtn[aria-pressed="true"]{background:var(--good);border-color:var(--good);color:var(--on-good)}
+.cutbtn[aria-pressed="true"]:hover{color:var(--on-good);filter:brightness(1.08)}
+.cutbtn small{font-weight:400;font-size:12px;opacity:.85}
+.st-done{color:var(--good);font-weight:700}
+.st-part{color:var(--warn);font-weight:600}
+.st-wait{color:var(--ink-3)}
 
 @media (max-width:520px){.fields{grid-template-columns:1fr 1fr}.kpi{padding:12px 14px}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 @media print{
   body{background:#fff}
-  .panel,.tools,.legend,.orders,.noprint,#resNotice{display:none!important}
+  .panel,.tools,.legend,.orders,.noprint,#resNotice,.work,.cutbtn{display:none!important}
   .layout{display:block}
   .wrap{max-width:none;padding:0}
   .sheets{grid-template-columns:1fr 1fr!important}
@@ -771,8 +799,9 @@ const Engine = (() => {
         const w = f.w - k, h = f.h - k;
         if (w > 0 && h > 0 && (!rem || w * h > rem.w * rem.h)) rem = {x: trim + f.x, y: trim + f.y, w, h};
       }
-      const cuts = s.cuts.map(c => [X(c[0]), Y(c[1]), X(c[2]), Y(c[3])]);
-      return {idx: si + 1, items, used: s.used, util: s.used / (W * H), rem, cuts, nCuts: s.cuts.length + (trim > 0 ? 4 : 0)};
+      const r1 = v => Math.round(v * 10) / 10;
+      const cuts = s.cuts.map(c => [r1(X(c[0])), r1(Y(c[1])), r1(X(c[2])), r1(Y(c[3]))]);
+      return {idx: si + 1, items, used: s.used, util: s.used / (W * H), rem, cuts, nCuts: s.cuts.length + (trim > 0 ? 4 : 0), W, H, trim};
     });
   }
 
@@ -809,7 +838,7 @@ function sampleDemand() {
   const plural = (n, a, b, c) => n === 1 ? a : (n >= 2 && n <= 4 ? b : c);
   const cssStr = s => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\n\r]/g, ' ');
 
-  const DEFAULTS = {W: 2000, H: 1000, kerf: 2, trim: 0, rotate: true, unit: 'auto', effort: 'std', view: 's'};
+  const DEFAULTS = {W: 2000, H: 1000, kerf: 2, trim: 0, rotate: true, unit: 'auto', effort: 'std', view: 's', filter: 'all'};
   const BUDGET = {fast: 1200, std: 4000, deep: 15000};
   const LS_KEY = 'rezani-skla/nastaveni/v1';
   let framed = true;
@@ -836,6 +865,7 @@ function sampleDemand() {
     inp.W.value = settings.W; inp.H.value = settings.H; inp.kerf.value = settings.kerf; inp.trim.value = settings.trim;
     inp.rotate.checked = !!settings.rotate; inp.unit.value = settings.unit; inp.effort.value = settings.effort;
     els.results.dataset.view = settings.view;
+    els.results.dataset.filter = settings.filter;
     renderSpec();
   }
   function readSettings() {
@@ -864,7 +894,8 @@ function sampleDemand() {
     if (!lastResult) return;
     els.results.classList.add('stale');
     els.run.textContent = 'Přepočítat řezání';
-    els.notice.innerHTML = `<div class="notice info"><b>Poptávka nebo nastavení se změnily.</b> <span>Klikněte na „Přepočítat řezání“ (nebo Ctrl + Enter).</span></div>`;
+    const nCut = lastResult.groups.reduce((n, g) => n + g.sheets.filter(x => x.cut).length, 0);
+    els.notice.innerHTML = `<div class="notice info"><b>Poptávka nebo nastavení se změnily.</b> <span>Klikněte na „Přepočítat řezání“ (nebo Ctrl + Enter).${nCut ? ` Díly na uříznutých tabulích (${fmt(nCut)}) se znovu řezat nebudou.` : ''}</span></div>`;
   }
 
   /* ---------- Poptávka ---------- */
@@ -914,6 +945,8 @@ function sampleDemand() {
     els.progText.textContent = text;
   }
 
+  const pieceKey = p => [p.type, p.order, p.w, p.h].join('\u0001');
+
   async function compute(budgetOverride) {
     const {s, err} = readSettings();
     els.setErr.textContent = err;
@@ -922,7 +955,7 @@ function sampleDemand() {
     const parsed = parseDemand(els.text.value, settings.unit);
     renderParseInfo(parsed);
     if (parsed.error) {
-      lastResult = null; els.results.classList.remove('stale'); els.notice.innerHTML = '';
+      els.results.classList.remove('stale'); els.notice.innerHTML = '';
       els.body.innerHTML = `<div class="empty"><h2>Zatím není co řezat</h2><p>${esc(parsed.error)}</p></div>`;
       return;
     }
@@ -930,31 +963,121 @@ function sampleDemand() {
     const cancelled = () => myRun !== runSeq;
     els.run.disabled = true; els.run.textContent = 'Počítám…';
     const cfg = {W: settings.W, H: settings.H, kerf: settings.kerf, trim: settings.trim, rotate: settings.rotate};
+
+    // Uříznuté tabule z minulého plánu zůstávají beze změny; jejich díly se z poptávky odečtou.
+    const pool = new Map(), frozen = new Map();
+    let keptCut = 0, droppedCut = 0;
+    for (const p of parsed.pieces) { const k = pieceKey(p); pool.set(k, (pool.get(k) || 0) + 1); }
+    if (lastResult) {
+      for (const g of lastResult.groups) for (const sh of g.sheets) {
+        if (!sh.cut) continue;
+        if (!sh.items.some(it => pool.get(pieceKey(it.p)) > 0)) { droppedCut++; continue; }
+        for (const it of sh.items) { const k = pieceKey(it.p), c = pool.get(k) || 0; if (c > 0) pool.set(k, c - 1); }
+        const gk = g.key == null ? '' : g.key;
+        if (!frozen.has(gk)) frozen.set(gk, []);
+        frozen.get(gk).push(sh); keptCut++;
+      }
+    }
+    const rest = [];
+    for (const p of parsed.pieces) { const k = pieceKey(p), c = pool.get(k) || 0; if (c > 0) { pool.set(k, c - 1); rest.push(p); } }
+
     const gm = new Map();
-    for (const p of parsed.pieces) { if (!gm.has(p.type)) gm.set(p.type, []); gm.get(p.type).push(p); }
-    const keys = [...gm.keys()].sort(collator.compare);
-    const total = parsed.pieces.length, budget = budgetOverride || BUDGET[settings.effort] || 4000;
+    for (const p of rest) { if (!gm.has(p.type)) gm.set(p.type, []); gm.get(p.type).push(p); }
+    const keys = [...new Set([...gm.keys(), ...frozen.keys()])].sort(collator.compare);
+    const total = Math.max(1, rest.length), budget = budgetOverride || BUDGET[settings.effort] || 4000;
     const t0 = performance.now();
     const groups = []; let done = 0, runs = 0;
     showProgress(0, 'Připravuji…');
     await new Promise(r => setTimeout(r, 20));
     for (let gi = 0; gi < keys.length; gi++) {
-      const pcs = gm.get(keys[gi]);
-      const label = keys[gi] || (keys.length > 1 ? 'Bez typu' : 'Sklo');
-      const ctx = Engine.prepare(pcs, cfg);
-      const share = Math.max(250, budget * pcs.length / total);
-      const res = await Engine.solve(ctx, share, pr => {
-        showProgress((done + Math.min(1, pr.frac) * pcs.length) / total,
-          `${keys.length > 1 ? label + ': ' : ''}vyzkoušeno ${fmt(pr.runs)} variant · nejlépe ${fmt(pr.best)} ${plural(pr.best, 'tabule', 'tabule', 'tabulí')} (min. ${fmt(pr.lb)})`);
-      }, cancelled, 4101 + gi);
-      if (cancelled()) return;
-      groups.push({gid: 'g' + gi, label, ctx, sheets: Engine.materialize(ctx, res.sheets)});
-      done += pcs.length; runs += res.runs;
+      const key = keys[gi], pcs = gm.get(key) || [], fz = (frozen.get(key) || []).sort((a, b) => a.idx - b.idx);
+      const label = key || (keys.length > 1 ? 'Bez typu' : 'Sklo');
+      let sheets = [], lb = 0, n = 0, unfit = [];
+      if (pcs.length) {
+        const ctx = Engine.prepare(pcs, cfg);
+        const share = Math.max(250, budget * pcs.length / total);
+        const res = await Engine.solve(ctx, share, pr => {
+          showProgress((done + Math.min(1, pr.frac) * pcs.length) / total,
+            `${keys.length > 1 ? label + ': ' : ''}vyzkoušeno ${fmt(pr.runs)} variant · nejlépe ${fmt(pr.best)} ${plural(pr.best, 'tabule', 'tabule', 'tabulí')} (min. ${fmt(pr.lb)})`);
+        }, cancelled, 4101 + gi);
+        if (cancelled()) return;
+        sheets = Engine.materialize(ctx, res.sheets); lb = ctx.lb; n = ctx.total; unfit = ctx.unfit; runs += res.runs;
+      }
+      // nové tabule dostanou čísla, která uříznuté tabule nepoužívají
+      const usedIdx = new Set(fz.map(x => x.idx));
+      let next = 1;
+      for (const sh of sheets) { while (usedIdx.has(next)) next++; sh.idx = next++; }
+      const fzPieces = fz.reduce((a, x) => a + x.items.length, 0);
+      groups.push({gid: 'g' + gi, key, label, lb: lb + fz.length, total: n + fzPieces, unfit, sheets: fz.concat(sheets).sort((a, b) => a.idx - b.idx)});
+      done += pcs.length;
     }
     els.run.disabled = false; els.run.textContent = 'Spočítat řezání';
     els.prog.hidden = true;
-    lastResult = {cfg, parsed, groups, runs, ms: performance.now() - t0, multi: keys.length > 1};
+    lastResult = {cfg, orders: parsed.orders, groups, runs, ms: performance.now() - t0, multi: keys.length > 1, keptCut, droppedCut};
     renderResults(lastResult);
+    saveJob();
+  }
+
+  /* ---------- Uložení rozpracovaného plánu (v tomto prohlížeči) ---------- */
+  const JOB_KEY = 'rezani-skla/plan/v1';
+  function saveJob() {
+    if (!lastResult) return;
+    try {
+      localStorage.setItem(JOB_KEY, JSON.stringify({v: 1, savedAt: Date.now(), text: els.text.value, fileName, isSample, result: lastResult}));
+    } catch (e) {
+      if (!$('#saveErr')) els.notice.insertAdjacentHTML('beforeend', '<div class="notice warn" id="saveErr"><b>Stav se nepodařilo uložit.</b><span>Prohlížeč nepovoluje ukládání (anonymní okno?). Značky „uříznuto“ po zavření stránky zmizí.</span></div>');
+    }
+  }
+  function loadJob() {
+    try {
+      const j = JSON.parse(localStorage.getItem(JOB_KEY) || 'null');
+      if (j && j.v === 1 && j.result && Array.isArray(j.result.groups)) return j;
+    } catch (e) { /* bez úložiště */ }
+    return null;
+  }
+  const when = t => new Date(t).toLocaleString('cs-CZ', {day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'});
+
+  /* ---------- Stav řezání ---------- */
+  function workStats(R) {
+    let sheets = 0, cut = 0, oDone = 0;
+    const ord = new Map();
+    for (const g of R.groups) for (const sh of g.sheets) {
+      sheets++; if (sh.cut) cut++;
+      for (const it of sh.items) {
+        const id = String(it.p.order), e = ord.get(id) || {n: 0, c: 0};
+        e.n++; if (sh.cut) e.c++; ord.set(id, e);
+      }
+    }
+    for (const e of ord.values()) if (e.c === e.n) oDone++;
+    return {sheets, cut, ord, oDone, oTotal: ord.size};
+  }
+  function workHTML(R) {
+    const w = workStats(R), pct = w.sheets ? w.cut / w.sheets * 100 : 0, f = settings.filter;
+    return `<div class="work-l"><span class="lbl">Uříznuto</span><span class="work-v"><b>${fmt(w.cut)}</b> z ${fmt(w.sheets)} ${w.sheets === 1 ? 'tabule' : 'tabulí'}</span></div>
+      <div class="wbar" role="progressbar" aria-label="Uříznuté tabule" aria-valuemin="0" aria-valuemax="${w.sheets}" aria-valuenow="${w.cut}"><i style="width:${pct.toFixed(1)}%"></i></div>
+      <span class="work-o">hotové objednávky <b>${fmt(w.oDone)}</b> z ${fmt(w.oTotal)}</span>
+      <span class="seg" role="group" aria-label="Zobrazit tabule"><button type="button" data-filter="all" aria-pressed="${f === 'all'}">Vše</button><button type="button" data-filter="todo" aria-pressed="${f === 'todo'}">Zbývá uříznout</button><button type="button" data-filter="done" aria-pressed="${f === 'done'}">Uříznuté</button></span>
+      ${w.cut ? '<span class="confirm" id="clearCutWrap"><button type="button" class="btn btn-quiet" id="clearCut">Zrušit značky</button></span>' : ''}`;
+  }
+  function statusHTML(e) {
+    if (!e) return '';
+    if (e.c === e.n) return '<span class="st-done">hotovo</span>';
+    if (e.c > 0) return `<span class="st-part">${e.c} z ${e.n} ${e.n === 1 ? 'dílu' : 'dílů'}</span>`;
+    return '<span class="st-wait">čeká</span>';
+  }
+  function updateWork() {
+    if (!lastResult) return;
+    const box = $('#work');
+    if (box) box.innerHTML = workHTML(lastResult);
+    const {ord} = workStats(lastResult);
+    els.body.querySelectorAll('tbody tr').forEach(tr => { const td = tr.querySelector('td.st'); if (td) td.innerHTML = statusHTML(ord.get(tr.dataset.o)); });
+  }
+  const cutBtnHTML = sh => sh.cut
+    ? `<span class="tick" aria-hidden="true">✓</span>Uříznuto${sh.cutAt ? ` <small>${esc(when(sh.cutAt))}</small>` : ''}`
+    : '<span class="tick" aria-hidden="true"></span>Označit jako uříznuté';
+  function findSheet(gid, idx) {
+    const g = lastResult && lastResult.groups.find(x => x.gid === gid);
+    return g ? g.sheets.find(x => x.idx === idx) : null;
   }
 
   /* ---------- Vykreslení ---------- */
@@ -976,12 +1099,12 @@ function sampleDemand() {
     return `<g class="pc" data-o="${esc(id)}"><title>${esc(tip)}</title><rect x="${x}" y="${y}" width="${w}" height="${h}"/>${t}</g>`;
   }
 
-  function sheetSVG(sh, cfg, label) {
-    const {W, H, trim} = cfg, pad = 4;
+  function sheetSVG(sh, label) {
+    const {W, H, trim} = sh, pad = 4;
     let o = `<svg class="sv" viewBox="${-pad} ${-pad} ${W + 2 * pad} ${H + 2 * pad}" role="img" aria-label="${esc(label)}">`;
     o += `<rect class="s-waste" x="0" y="0" width="${W}" height="${H}"/>`;
     if (trim > 0) o += `<path class="s-trim" fill-rule="evenodd" d="M0 0H${W}V${H}H0Z M${trim} ${trim}V${H - trim}H${W - trim}V${trim}Z"/>`;
-    if (sh.cuts.length) o += `<path class="s-cut" d="${sh.cuts.map(c => `M${+c[0].toFixed(1)} ${+c[1].toFixed(1)}L${+c[2].toFixed(1)} ${+c[3].toFixed(1)}`).join('')}"/>`;
+    if (sh.cuts.length) o += `<path class="s-cut" d="${sh.cuts.map(c => `M${c[0]} ${c[1]}L${c[2]} ${c[3]}`).join('')}"/>`;
     const r = sh.rem;
     if (r && r.w >= 150 && r.h >= 150 && r.w * r.h >= 60000) {
       o += `<rect class="s-rem" x="${r.x + 6}" y="${r.y + 6}" width="${r.w - 12}" height="${r.h - 12}"/>`;
@@ -993,36 +1116,40 @@ function sampleDemand() {
     return o + '</svg>';
   }
 
-  function sheetCard(g, sh, cfg, multi) {
+  function sheetCard(g, sh, multi) {
     const pct = sh.util * 100, cls = pct >= 85 ? 'good' : pct < 60 ? 'warn' : '';
     const title = `${multi ? g.label + ' · ' : ''}Tabule ${sh.idx}`;
     const r = sh.rem;
     const remTxt = r && r.w >= 100 && r.h >= 100 ? `<span>největší zbytek <b>${mm(r.w)} × ${mm(r.h)}</b> mm</span>` : '<span>bez použitelného zbytku</span>';
     const list = sh.items.map(it => `<li><b>${esc(it.p.order)}</b> ${mm(it.p.w)}×${mm(it.p.h)}${it.rot ? ' ↻' : ''}${it.p.note ? ' · ' + esc(it.p.note) : ''}</li>`).join('');
-    return `<article class="sheet" id="${g.gid}-s${sh.idx}">
+    return `<article class="sheet${sh.cut ? ' done' : ''}" id="${g.gid}-s${sh.idx}" data-g="${g.gid}" data-i="${sh.idx}">
       <header class="sh-h"><h3>${esc(title)}</h3><span class="pill ${cls}">${fmt(pct, 1)} %</span><span class="sh-m">${sh.items.length} ${plural(sh.items.length, 'díl', 'díly', 'dílů')} · ${sh.nCuts} ${plural(sh.nCuts, 'řez', 'řezy', 'řezů')}</span></header>
-      ${sheetSVG(sh, cfg, title + `, využití ${fmt(pct, 1)} %`)}
-      <div class="sh-f">${remTxt}</div>
+      ${sheetSVG(sh, title + `, využití ${fmt(pct, 1)} %`)}
+      <div class="sh-f">${remTxt}<button type="button" class="cutbtn" aria-pressed="${!!sh.cut}">${cutBtnHTML(sh)}</button></div>
       <details class="sh-d"><summary>Seznam dílů</summary><ol>${list}</ol></details>
     </article>`;
   }
 
-  function renderResults(R) {
-    const {cfg, parsed, groups, multi} = R;
-    const A = cfg.W * cfg.H / 1e6;
-    let nSheets = 0, lb = 0, pieceArea = 0, nPieces = 0;
+  function renderResults(R, extra) {
+    extra = extra || {};
+    const {cfg, groups, multi} = R;
+    const areaOf = sh => (sh.W || cfg.W) * (sh.H || cfg.H) / 1e6;
+    let nSheets = 0, lb = 0, pieceArea = 0, sheetArea = 0, nPieces = 0, anyCut = false;
     const unfit = [];
     for (const g of groups) {
-      nSheets += g.sheets.length; lb += g.ctx.lb; nPieces += g.ctx.total;
-      for (const s of g.sheets) for (const it of s.items) pieceArea += it.w * it.h;
-      for (const p of g.ctx.unfit) unfit.push({g, p});
+      nSheets += g.sheets.length; lb += g.lb; nPieces += g.total;
+      for (const s of g.sheets) { sheetArea += areaOf(s); if (s.cut) anyCut = true; for (const it of s.items) pieceArea += it.w * it.h / 1e6; }
+      for (const p of g.unfit) unfit.push({g, p});
     }
-    pieceArea /= 1e6;
-    const sheetArea = nSheets * A, waste = sheetArea - pieceArea, util = sheetArea ? pieceArea / sheetArea : 0;
+    const waste = sheetArea - pieceArea, util = sheetArea ? pieceArea / sheetArea : 0;
     els.results.classList.remove('stale');
+    els.results.dataset.filter = settings.filter;
 
     let notice = '';
+    if (extra.restored) notice += `<div class="notice info"><b>Pokračujete v uloženém plánu</b><span>z ${esc(when(extra.restored))}. Uložený je jen v tomto prohlížeči.</span></div>`;
     if (isSample) notice += `<div class="notice info"><b>Ukázková data</b><span>200 smyšlených objednávek protipožárního skla EI 30 a EI 60. Nahrajte vlastní poptávku vlevo.</span></div>`;
+    if (!extra.restored && R.keptCut) notice += `<div class="notice info"><b>${fmt(R.keptCut)} ${plural(R.keptCut, 'uříznutá tabule zůstala', 'uříznuté tabule zůstaly', 'uříznutých tabulí zůstalo')} beze změny.</b><span>Nově se rozvrhly jen díly, které ještě uříznuté nejsou.</span></div>`;
+    if (!extra.restored && R.droppedCut) notice += `<div class="notice warn"><b>${fmt(R.droppedCut)} ${plural(R.droppedCut, 'uříznutá tabule patřila', 'uříznuté tabule patřily', 'uříznutých tabulí patřilo')} k předchozí poptávce.</b><span>V nové poptávce jejich díly nejsou, proto v plánu už nejsou.</span></div>`;
     if (unfit.length) {
       notice += `<div class="notice bad"><b>${fmt(unfit.length)} ${plural(unfit.length, 'díl je větší', 'díly jsou větší', 'dílů je větších')} než tabule ${fmt(cfg.W)} × ${fmt(cfg.H)} mm${cfg.trim ? ' po ořezu okrajů' : ''}</b><span>– nejsou v plánu.</span>
         <ul>${unfit.slice(0, 12).map(u => `<li>${esc(u.p.order)}: ${mm(u.p.w)} × ${mm(u.p.h)} mm${multi ? ' (' + esc(u.g.label) + ')' : ''}</li>`).join('')}${unfit.length > 12 ? `<li>… a dalších ${unfit.length - 12}</li>` : ''}</ul></div>`;
@@ -1036,11 +1163,12 @@ function sampleDemand() {
       <div class="kpi"><span class="l">Tabulí</span><span class="v">${fmt(nSheets)}</span><span class="s">${optimal ? '<span class="chip">nejnižší možný počet</span>' : `teoretické minimum ${fmt(lb)}`}</span></div>
       <div class="kpi"><span class="l">Využití skla</span><span class="v">${fmt(util * 100, 1)}<small>%</small></span><span class="s">díly ${fmt(pieceArea, 2)} m² z ${fmt(sheetArea, 2)} m²</span></div>
       <div class="kpi"><span class="l">Prořez</span><span class="v">${fmt(waste, 2)}<small>m²</small></span><span class="s">${fmt((1 - util) * 100, 1)} % plochy tabulí</span></div>
-      <div class="kpi"><span class="l">Dílů</span><span class="v">${fmt(nPieces)}</span><span class="s">${fmt(parsed.orders)} ${plural(parsed.orders, 'objednávka', 'objednávky', 'objednávek')}</span></div>
-    </section>`;
+      <div class="kpi"><span class="l">Dílů</span><span class="v">${fmt(nPieces)}</span><span class="s">${fmt(R.orders)} ${plural(R.orders, 'objednávka', 'objednávky', 'objednávek')}</span></div>
+    </section>
+    <section class="work" id="work" aria-label="Stav řezání">${workHTML(R)}</section>`;
 
     h += `<div class="bar2">
-      <p class="meta">Vyzkoušeno ${fmt(R.runs)} variant rozložení za ${fmt(R.ms / 1000, 1)} s. Tabule jsou seřazené od nejlépe využité.</p>
+      <p class="meta">Vyzkoušeno ${fmt(R.runs)} variant rozložení za ${fmt(R.ms / 1000, 1)} s.${anyCut ? '' : ' Tabule jsou seřazené od nejlépe využité.'}</p>
       <div class="tools">
         <button type="button" class="btn" id="copyPlan">Kopírovat plán pro Excel</button>
         ${framed ? '' : '<button type="button" class="btn" id="csvPlan">Stáhnout CSV</button><button type="button" class="btn" id="printPlan">Tisk / PDF</button>'}
@@ -1058,12 +1186,11 @@ function sampleDemand() {
 
     for (const g of groups) {
       if (!g.sheets.length) continue;
-      const gA = g.sheets.length * A;
-      let gp = 0; for (const s of g.sheets) for (const it of s.items) gp += it.w * it.h;
-      gp /= 1e6;
+      let gA = 0, gp = 0;
+      for (const s of g.sheets) { gA += areaOf(s); for (const it of s.items) gp += it.w * it.h / 1e6; }
       h += `<section class="group" aria-label="${esc(g.label)}">`;
-      if (multi) h += `<header class="group-h"><h2>${esc(g.label)}</h2><span class="gs">${fmt(g.sheets.length)} ${plural(g.sheets.length, 'tabule', 'tabule', 'tabulí')} (min. ${fmt(g.ctx.lb)}) · využití ${fmt(gp / gA * 100, 1)} % · prořez ${fmt(gA - gp, 2)} m²</span></header>`;
-      h += `<div class="sheets">${g.sheets.map(sh => sheetCard(g, sh, cfg, multi)).join('')}</div></section>`;
+      if (multi) h += `<header class="group-h"><h2>${esc(g.label)}</h2><span class="gs">${fmt(g.sheets.length)} ${plural(g.sheets.length, 'tabule', 'tabule', 'tabulí')} (min. ${fmt(g.lb)}) · využití ${fmt(gp / gA * 100, 1)} % · prořez ${fmt(gA - gp, 2)} m²</span></header>`;
+      h += `<div class="sheets">${g.sheets.map(sh => sheetCard(g, sh, multi)).join('')}</div></section>`;
     }
 
     // přehled objednávek
@@ -1071,15 +1198,15 @@ function sampleDemand() {
     for (const g of groups) for (const s of g.sheets) for (const it of s.items) {
       const id = String(it.p.order);
       let e = orders.get(id);
-      if (!e) { e = {id, types: new Set(), n: 0, area: 0, refs: []}; orders.set(id, e); }
-      e.types.add(g.label); e.n++; e.area += it.w * it.h;
+      if (!e) { e = {id, types: new Set(), n: 0, c: 0, area: 0, refs: []}; orders.set(id, e); }
+      e.types.add(g.label); e.n++; if (s.cut) e.c++; e.area += it.w * it.h;
       const key = g.gid + '-s' + s.idx;
       if (!e.refs.some(r => r.key === key)) e.refs.push({key, g, idx: s.idx});
     }
     const ord = [...orders.values()].sort((a, b) => collator.compare(a.id, b.id));
     h += `<section class="orders" aria-labelledby="h-orders">
       <div class="orders-h"><h2 id="h-orders">Objednávky</h2><input type="search" class="search" id="orderFilter" placeholder="Hledat objednávku…" aria-label="Hledat objednávku"></div>
-      <div class="tbl-wrap"><table><thead><tr><th>Objednávka</th>${multi ? '<th>Typ skla</th>' : ''}<th class="num">Dílů</th><th class="num">Plocha m²</th><th>Na tabulích</th></tr></thead><tbody>
+      <div class="tbl-wrap"><table><thead><tr><th>Objednávka</th>${multi ? '<th>Typ skla</th>' : ''}<th class="num">Dílů</th><th class="num">Plocha m²</th><th>Na tabulích</th><th>Stav</th></tr></thead><tbody>
       ${ord.map(e => {
         const refs = e.refs.sort((a, b) => a.g.gid.localeCompare(b.g.gid) || a.idx - b.idx);
         let rs = '', lastG = null;
@@ -1087,7 +1214,7 @@ function sampleDemand() {
           if (multi && r.g !== lastG) { rs += `${lastG ? ' ' : ''}<span class="sref-g">${esc(r.g.label)}:</span>`; lastG = r.g; }
           rs += `<button type="button" class="sref" data-target="${r.key}">${r.idx}</button>`;
         }
-        return `<tr data-o="${esc(e.id)}" data-s="${esc(norm(e.id))}"><td class="id">${esc(e.id)}</td>${multi ? `<td>${esc([...e.types].join(', '))}</td>` : ''}<td class="num">${e.n}</td><td class="num">${fmt(e.area / 1e6, 2)}</td><td>${rs}</td></tr>`;
+        return `<tr data-o="${esc(e.id)}" data-s="${esc(norm(e.id))}"><td class="id">${esc(e.id)}</td>${multi ? `<td>${esc([...e.types].join(', '))}</td>` : ''}<td class="num">${e.n}</td><td class="num">${fmt(e.area / 1e6, 2)}</td><td>${rs}</td><td class="st">${statusHTML(e)}</td></tr>`;
       }).join('')}
       </tbody></table></div></section>`;
 
@@ -1107,22 +1234,27 @@ function sampleDemand() {
       const tr = els.body.querySelector(`tbody tr[data-o="${cssStr(pinned)}"]`);
       if (tr) tr.classList.add('pin');
       if (scroll) {
-        const pc = els.body.querySelector(`.pc[data-o="${cssStr(pinned)}"]`);
+        const pc = [...els.body.querySelectorAll(`.pc[data-o="${cssStr(pinned)}"]`)].find(x => x.closest('.sheet').offsetParent);
         const card = pc && pc.closest('.sheet');
         if (card) scrollToCard(card);
       }
     }
   }
   function scrollToCard(card) {
+    if (!card.offsetParent && settings.filter !== 'all') setFilter('all');
     card.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center'});
     card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash');
+  }
+  function setFilter(f) {
+    settings.filter = f; saveSettings(settings); els.results.dataset.filter = f;
+    els.body.querySelectorAll('button[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === f)));
   }
 
   /* ---------- Export ---------- */
   function planRows(R) {
-    const rows = [['Typ skla', 'Tabule', 'Objednávka', 'Šířka (mm)', 'Výška (mm)', 'Otočeno', 'X (mm)', 'Y (mm)', 'Poznámka']];
+    const rows = [['Typ skla', 'Tabule', 'Objednávka', 'Šířka (mm)', 'Výška (mm)', 'Otočeno', 'X (mm)', 'Y (mm)', 'Poznámka', 'Uříznuto']];
     for (const g of R.groups) for (const s of g.sheets) for (const it of s.items)
-      rows.push([g.label, s.idx, it.p.order, it.p.w, it.p.h, it.rot ? 'ano' : 'ne', Math.round(it.x * 10) / 10, Math.round(it.y * 10) / 10, it.p.note || '']);
+      rows.push([g.label, s.idx, it.p.order, it.p.w, it.p.h, it.rot ? 'ano' : 'ne', Math.round(it.x * 10) / 10, Math.round(it.y * 10) / 10, it.p.note || '', s.cut ? 'ano' : 'ne']);
     return rows;
   }
   function showCopyFallback(text, msg) {
@@ -1156,27 +1288,52 @@ function sampleDemand() {
   els.body.addEventListener('mouseover', e => { const pc = e.target.closest('.pc'); if (pc) setHL(pc.dataset.o); });
   els.body.addEventListener('mouseout', e => { const pc = e.target.closest('.pc'); if (pc && !(e.relatedTarget && pc.contains(e.relatedTarget))) setHL(pinned); });
   els.body.addEventListener('click', e => {
+    const cb = e.target.closest('.cutbtn');
+    if (cb) {
+      const card = cb.closest('.sheet'), sh = findSheet(card.dataset.g, Number(card.dataset.i));
+      if (!sh) return;
+      sh.cut = !sh.cut; sh.cutAt = sh.cut ? Date.now() : null;
+      card.classList.toggle('done', sh.cut);
+      cb.setAttribute('aria-pressed', String(sh.cut)); cb.innerHTML = cutBtnHTML(sh);
+      updateWork(); saveJob();
+      return;
+    }
     const sref = e.target.closest('.sref');
     if (sref) { e.stopPropagation(); const card = document.getElementById(sref.dataset.target); const tr = sref.closest('tr'); if (tr && pinned !== tr.dataset.o) pin(tr.dataset.o, false); if (card) scrollToCard(card); return; }
     const pc = e.target.closest('.pc'); if (pc) { pin(pc.dataset.o, false); return; }
     const tr = e.target.closest('tbody tr'); if (tr) { pin(tr.dataset.o, true); return; }
-    const vb = e.target.closest('.seg button');
+    const fb = e.target.closest('button[data-filter]');
+    if (fb) { setFilter(fb.dataset.filter); return; }
+    const vb = e.target.closest('button[data-view]');
     if (vb) {
       settings.view = vb.dataset.view; saveSettings(settings); els.results.dataset.view = settings.view;
       vb.parentElement.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === vb)));
       return;
     }
     if (!lastResult) return;
-    if (e.target.id === 'copyPlan') copyText(planRows(lastResult).map(r => r.join('\t')).join('\n'), 'Zkopírováno ✓', e.target);
-    if (e.target.id === 'csvPlan') {
-      const csv = '\ufeff' + planRows(lastResult).map(r => r.map(v => /[;"\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v).replace('.', ',')).join(';')).join('\r\n');
+    const id = e.target.id;
+    if (id === 'clearCut') {
+      const n = workStats(lastResult).cut;
+      $('#clearCutWrap').innerHTML = `<span>Zrušit značku „uříznuto“ u ${fmt(n)} ${n === 1 ? 'tabule' : 'tabulí'}?</span><button type="button" class="btn btn-danger" id="clearCutYes">Ano, zrušit</button><button type="button" class="btn" id="clearCutNo">Ne</button>`;
+      $('#clearCutNo').focus();
+    }
+    if (id === 'clearCutNo') updateWork();
+    if (id === 'clearCutYes') {
+      for (const g of lastResult.groups) for (const sh of g.sheets) { sh.cut = false; sh.cutAt = null; }
+      els.body.querySelectorAll('.sheet.done').forEach(c => c.classList.remove('done'));
+      els.body.querySelectorAll('.cutbtn').forEach(b => { b.setAttribute('aria-pressed', 'false'); b.innerHTML = cutBtnHTML({}); });
+      updateWork(); saveJob();
+    }
+    if (id === 'copyPlan') copyText(planRows(lastResult).map(r => r.join('\t')).join('\n'), 'Zkopírováno ✓', e.target);
+    if (id === 'csvPlan') {
+      const csv = '﻿' + planRows(lastResult).map(r => r.map(v => /[;"\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v).replace('.', ',')).join(';')).join('\r\n');
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));
       a.download = `narezovy-plan-${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     }
-    if (e.target.id === 'printPlan') window.print();
+    if (id === 'printPlan') window.print();
   });
   els.body.addEventListener('input', e => {
     if (e.target.id !== 'orderFilter') return;
@@ -1185,8 +1342,16 @@ function sampleDemand() {
   });
 
   fillSettings();
-  els.text.value = sampleDemand(); isSample = true;
-  compute(1500);
+  const job = loadJob();
+  if (job) {
+    els.text.value = job.text || ''; fileName = job.fileName || ''; isSample = !!job.isSample; lastResult = job.result;
+    const parsed = parseDemand(els.text.value, settings.unit);
+    if (!parsed.error) renderParseInfo(parsed);
+    renderResults(lastResult, {restored: job.savedAt});
+  } else {
+    els.text.value = sampleDemand(); isSample = true;
+    compute(1500);
+  }
 })();
 </script>
 

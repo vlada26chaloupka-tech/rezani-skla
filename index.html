@@ -1,0 +1,1193 @@
+<!doctype html>
+<html lang="cs">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Řezání skla</title>
+<meta name="description" content="Nářezový plán protipožárních skleněných tabulí s minimálním prořezem">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=JetBrains+Mono:wght@400;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#EDF1EF; --surface:#FAFCFB; --surface-2:#E2E9E6; --ink:#12201C; --ink-2:#4A5B56; --ink-3:#6F817B;
+  --line:#CAD5D1; --line-strong:#A9B8B3;
+  --accent:#0E6B59; --accent-ink:#FFFFFF; --accent-soft:#D5EBE4;
+  --glass:#CFE8DF; --glass-edge:#4E9481; --glass-text:#0B372E;
+  --hi:#FFD27A; --hi-edge:#A86400; --hi-soft:#FFF1D1;
+  --waste-bg:#F4EBE6; --waste-line:#DDBBAC; --trim:#E5D2C8;
+  --cut:#0E6B59; --remnant:#2860A3;
+  --good:#256F45; --good-soft:#D8EEDF; --warn:#8F5A0C; --warn-soft:#F8E8C8; --bad:#A8231B; --bad-soft:#F7DEDB;
+  --f-display:"Archivo","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1412; --surface:#151D1A; --surface-2:#1C2723; --ink:#E2EBE7; --ink-2:#A2B4AE; --ink-3:#7D908A;
+    --line:#2A3833; --line-strong:#3D4F49;
+    --accent:#4CC3A6; --accent-ink:#04211A; --accent-soft:#16332B;
+    --glass:#1F413A; --glass-edge:#5DA793; --glass-text:#D6F2E9;
+    --hi:#6B4E14; --hi-edge:#F2B64E; --hi-soft:#2E2512;
+    --waste-bg:#1E1917; --waste-line:#46342D; --trim:#33261F;
+    --cut:#4CC3A6; --remnant:#72A9EA;
+    --good:#6FCF97; --good-soft:#173324; --warn:#E9B45A; --warn-soft:#33270F; --bad:#F08A80; --bad-soft:#3A1916;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1412; --surface:#151D1A; --surface-2:#1C2723; --ink:#E2EBE7; --ink-2:#A2B4AE; --ink-3:#7D908A;
+  --line:#2A3833; --line-strong:#3D4F49;
+  --accent:#4CC3A6; --accent-ink:#04211A; --accent-soft:#16332B;
+  --glass:#1F413A; --glass-edge:#5DA793; --glass-text:#D6F2E9;
+  --hi:#6B4E14; --hi-edge:#F2B64E; --hi-soft:#2E2512;
+  --waste-bg:#1E1917; --waste-line:#46342D; --trim:#33261F;
+  --cut:#4CC3A6; --remnant:#72A9EA;
+  --good:#6FCF97; --good-soft:#173324; --warn:#E9B45A; --warn-soft:#33270F; --bad:#F08A80; --bad-soft:#3A1916;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--f-display);font-stretch:88%;line-height:1.1;margin:0;text-wrap:balance}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.wrap{max-width:1640px;margin:0 auto;padding-inline:clamp(16px,3vw,36px);padding-block:18px 64px}
+.top{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;justify-content:space-between;padding-bottom:18px;margin-bottom:24px;border-bottom:1px solid var(--line)}
+.brand{display:flex;gap:14px;align-items:center}
+.brand svg{flex:none;width:46px;height:31px}
+.ic-glass{fill:var(--glass);stroke:var(--glass-edge);stroke-width:1.5}
+.ic-cut{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-dasharray:3 2}
+.ic-waste{fill:var(--waste-bg);stroke:var(--waste-line);stroke-width:1}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:3px}
+h1{font-size:clamp(28px,3.4vw,38px);font-weight:760;letter-spacing:-.01em}
+.spec{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 18px}
+.spec b{color:var(--ink);font-weight:600}
+
+.layout{display:grid;grid-template-columns:minmax(300px,370px) minmax(0,1fr);gap:clamp(20px,2.6vw,38px);align-items:start}
+@media (max-width:940px){.layout{grid-template-columns:minmax(0,1fr)}}
+.panel{display:flex;flex-direction:column;gap:14px;min-width:0}
+@media (min-width:941px){.panel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 14px);max-height:calc(100vh - 28px);overflow:auto;padding-right:4px;scrollbar-width:thin}}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.box h2{font-size:19px;font-weight:720}
+
+.drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:18px 12px;border:1.5px dashed var(--line-strong);border-radius:10px;background:var(--surface-2);text-align:center;cursor:pointer;transition:border-color .15s,background-color .15s}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.drop strong{font-family:var(--f-display);font-stretch:92%;font-size:17px;font-weight:700;color:var(--accent)}
+.drop span{font-size:13px;color:var(--ink-2)}
+.drop input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.lbl{font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+textarea{width:100%;min-height:150px;max-height:420px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:10px;font:12px/1.5 var(--f-mono);tab-size:12;white-space:pre;overflow:auto}
+textarea:focus{border-color:var(--accent);outline:none}
+.hint{font-size:13px;color:var(--ink-2);line-height:1.45}
+.hint b{color:var(--ink);font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.pinfo{display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+.pinfo:empty{display:none}
+.pinfo .ok{color:var(--ink)}
+.pinfo ul{margin:0;padding-left:18px;color:var(--warn);font-size:12.5px}
+.pinfo .err{color:var(--bad);font-weight:600}
+.pinfo .muted{color:var(--ink-2);font-size:12.5px}
+
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;background:var(--bg);overflow:hidden}
+.inp:focus-within{border-color:var(--accent)}
+.inp input{border:0;background:transparent;padding:8px 4px 8px 10px;width:100%;min-width:0;font-family:var(--f-mono);font-size:14px;font-variant-numeric:tabular-nums;outline:none}
+.inp span{padding:0 10px 0 2px;color:var(--ink-3);font-size:12px}
+select{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:8px 8px;font-size:14px}
+select:focus{border-color:var(--accent);outline:none}
+.check{display:flex;gap:10px;align-items:center;font-size:14.5px;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+.serr{color:var(--bad);font-size:13px;font-weight:600}
+.serr:empty{display:none}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);padding:6px 12px;font-weight:600;font-size:13.5px;cursor:pointer;transition:border-color .15s,color .15s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{width:100%;background:var(--accent);color:var(--accent-ink);border-color:var(--accent);padding:13px 16px;font-family:var(--f-display);font-stretch:95%;font-size:18px;font-weight:720}
+.btn-primary:hover{color:var(--accent-ink);filter:brightness(1.07)}
+.btn:disabled{opacity:.65;cursor:progress}
+.prog{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink-2)}
+.bar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s linear}
+
+.results{min-width:0;display:flex;flex-direction:column;gap:22px}
+.results.stale #resBody{opacity:.42;filter:saturate(.5)}
+.notice{border-radius:10px;padding:10px 14px;font-size:14px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;border:1px solid transparent}
+.notice.info{background:var(--accent-soft);color:var(--ink);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.notice.warn{background:var(--warn-soft);color:var(--ink);border-color:color-mix(in srgb,var(--warn) 35%,transparent)}
+.notice.bad{background:var(--bad-soft);color:var(--ink);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.notice b{font-weight:700}
+.notice ul{margin:4px 0 0;padding-left:18px;width:100%;font-family:var(--f-mono);font-size:12.5px}
+.empty{border:1.5px dashed var(--line-strong);border-radius:12px;padding:40px 24px;text-align:center;color:var(--ink-2)}
+.empty h2{font-size:22px;color:var(--ink);margin-bottom:6px}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.kpi{background:var(--surface);padding:14px 18px 15px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.kpi .l{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.kpi .v{font-family:var(--f-display);font-size:clamp(28px,3vw,38px);font-weight:760;font-stretch:88%;font-variant-numeric:tabular-nums;line-height:1.05}
+.kpi .v small{font-size:.5em;font-weight:600;color:var(--ink-2);margin-left:3px}
+.kpi .s{font-size:13px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--good-soft);color:var(--good);letter-spacing:.02em}
+
+.bar2{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+.meta{font-size:13px;color:var(--ink-2)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:6px 11px;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--ink-2);align-items:center}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.legend svg{width:26px;height:14px;flex:none}
+.lg-pc{fill:var(--glass);stroke:var(--glass-edge);stroke-width:1}
+.lg-w{fill:url(#hatchS)}
+.lg-cut{stroke:var(--cut);stroke-width:1.4;stroke-dasharray:3 2}
+.lg-rem{fill:none;stroke:var(--remnant);stroke-width:1.4;stroke-dasharray:4 2}
+.lg-hi{fill:var(--hi);stroke:var(--hi-edge);stroke-width:1}
+
+.group{display:flex;flex-direction:column;gap:14px}
+.group-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.group-h h2{font-size:26px;font-weight:760}
+.group-h .gs{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2)}
+.sheets{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:14px}
+.results[data-view="l"] .sheets{grid-template-columns:repeat(auto-fill,minmax(min(100%,720px),1fr))}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 12px 10px;display:flex;flex-direction:column;gap:8px;scroll-margin-top:18px;min-width:0}
+.sheet.flash{animation:flash 1.2s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 3px var(--hi-edge)}100%{box-shadow:0 0 0 3px transparent}}
+.sh-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sh-h h3{font-size:17px;font-weight:720}
+.sh-m{margin-left:auto;font-size:12.5px;color:var(--ink-2)}
+.pill{font-family:var(--f-mono);font-size:12px;font-weight:600;padding:1px 8px;border-radius:99px;background:var(--surface-2);color:var(--ink-2)}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.sv{display:block;width:100%;height:auto;overflow:visible}
+.sh-f{font-size:12.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:2px 14px}
+.sh-f b{color:var(--ink);font-weight:600;font-family:var(--f-mono);font-size:12px}
+.sh-d summary{cursor:pointer;font-size:12.5px;color:var(--accent);font-weight:600;width:max-content}
+.sh-d ol{margin:6px 0 0;padding-left:22px;font:12px/1.65 var(--f-mono);columns:2 190px;column-gap:18px;color:var(--ink-2)}
+.sh-d li b{color:var(--ink);font-weight:600}
+
+.hatch-bg{fill:var(--waste-bg)}
+.hatch-ln{stroke:var(--waste-line)}
+.s-waste{fill:url(#hatch)}
+.s-trim{fill:var(--trim)}
+.s-edge{fill:none;stroke:var(--ink-3);stroke-width:1.2;vector-effect:non-scaling-stroke}
+.s-cut{fill:none;stroke:var(--cut);stroke-width:1;stroke-dasharray:5 4;vector-effect:non-scaling-stroke;opacity:.85}
+.s-rem{fill:none;stroke:var(--remnant);stroke-width:1.5;stroke-dasharray:7 4;vector-effect:non-scaling-stroke}
+.s-remtxt{fill:var(--remnant);font-family:var(--f-mono);font-weight:600}
+.pc{cursor:pointer}
+.pc rect{fill:var(--glass);stroke:var(--glass-edge);stroke-width:1;vector-effect:non-scaling-stroke;transition:fill .12s}
+.pc text{fill:var(--glass-text);font-family:var(--f-body);font-weight:700;pointer-events:none}
+.pc text .d{font-family:var(--f-mono);font-weight:400}
+.pc:hover rect{stroke-width:2}
+
+.orders{display:flex;flex-direction:column;gap:12px}
+.orders-h{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.orders-h h2{font-size:24px;font-weight:760}
+.search{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:7px 11px;font-size:14px;width:min(100%,260px)}
+.search:focus{border-color:var(--accent);outline:none}
+.tbl-wrap{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{position:sticky;top:0;z-index:1;background:var(--surface-2);text-align:left;font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);padding:8px 12px;white-space:nowrap}
+td{padding:6px 12px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums;vertical-align:top}
+td.num,th.num{text-align:right}
+td.num{font-family:var(--f-mono);font-size:12.5px}
+td.id{font-weight:700}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--accent-soft)}
+tbody tr.pin td{background:var(--hi-soft)}
+.sref{border:0;background:none;color:var(--accent);font:600 12.5px var(--f-mono);padding:0 3px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.sref-g{color:var(--ink-3);font-size:12px;margin-right:2px}
+.copybox{width:100%;min-height:90px;font:12px var(--f-mono)}
+
+@media (max-width:520px){.fields{grid-template-columns:1fr 1fr}.kpi{padding:12px 14px}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+@media print{
+  body{background:#fff}
+  .panel,.tools,.legend,.orders,.noprint,#resNotice{display:none!important}
+  .layout{display:block}
+  .wrap{max-width:none;padding:0}
+  .sheets{grid-template-columns:1fr 1fr!important}
+  .sheet{break-inside:avoid;border-color:#999}
+  .sh-d{display:none}
+  .results.stale #resBody{opacity:1;filter:none}
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <pattern id="hatch" patternUnits="userSpaceOnUse" width="26" height="26" patternTransform="rotate(45)">
+      <rect class="hatch-bg" width="26" height="26"/>
+      <line class="hatch-ln" x1="0" y1="0" x2="0" y2="26" stroke-width="5"/>
+    </pattern>
+    <pattern id="hatchS" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)">
+      <rect class="hatch-bg" width="4" height="4"/>
+      <line class="hatch-ln" x1="0" y1="0" x2="0" y2="4" stroke-width="1.4"/>
+    </pattern>
+  </defs>
+</svg>
+<style id="hlStyle"></style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 46 31" aria-hidden="true">
+        <rect class="ic-waste" x="1" y="1" width="44" height="29" rx="1"/>
+        <rect class="ic-glass" x="1" y="1" width="27" height="29" rx="1"/>
+        <rect class="ic-glass" x="28" y="1" width="17" height="15"/>
+        <path class="ic-cut" d="M28 0V31M28 16H46"/>
+      </svg>
+      <div>
+        <p class="eyebrow">Protipožární sklo · nářezový plán</p>
+        <h1>Řezání skla</h1>
+      </div>
+    </div>
+    <div class="spec" id="spec" aria-live="polite"></div>
+  </header>
+
+  <div class="layout">
+    <aside class="panel" aria-label="Poptávka a nastavení">
+      <section class="box" aria-labelledby="h-demand">
+        <h2 id="h-demand">Poptávka</h2>
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept=".xlsx,.xls,.xlsm,.ods,.csv,.txt,.tsv">
+          <strong>Nahrát poptávku</strong>
+          <span>Excel nebo CSV – klikněte, nebo soubor přetáhněte sem</span>
+        </label>
+        <label class="lbl" for="demandText">…nebo vložte řádky z Excelu</label>
+        <textarea id="demandText" spellcheck="false" autocomplete="off" wrap="off"></textarea>
+        <p class="hint">Jeden řádek = jedna pozice. Sloupce poznám podle záhlaví: <b>Objednávka, Šířka, Výška, Počet</b>, nepovinně <b>Typ skla</b> a <b>Poznámka</b>. Rozměry v mm. Různé typy skla se řežou z různých tabulí.</p>
+        <div class="row">
+          <button type="button" class="btn" id="tplBtn">Zkopírovat vzor</button>
+          <button type="button" class="btn" id="sampleBtn">Ukázková data</button>
+          <button type="button" class="btn" id="clearBtn">Vyprázdnit</button>
+        </div>
+        <div class="pinfo" id="parseInfo" aria-live="polite"></div>
+      </section>
+
+      <section class="box" aria-labelledby="h-set">
+        <h2 id="h-set">Nastavení</h2>
+        <div class="fields">
+          <div class="field"><label class="lbl" for="setW">Šířka tabule</label><div class="inp"><input id="setW" type="number" inputmode="numeric" min="100" max="10000" step="1"><span>mm</span></div></div>
+          <div class="field"><label class="lbl" for="setH">Výška tabule</label><div class="inp"><input id="setH" type="number" inputmode="numeric" min="100" max="10000" step="1"><span>mm</span></div></div>
+          <div class="field"><label class="lbl" for="setKerf">Šířka řezu</label><div class="inp"><input id="setKerf" type="number" inputmode="decimal" min="0" max="20" step="0.5"><span>mm</span></div></div>
+          <div class="field"><label class="lbl" for="setTrim">Okrajový ořez</label><div class="inp"><input id="setTrim" type="number" inputmode="numeric" min="0" max="200" step="1"><span>mm</span></div></div>
+          <div class="field"><label class="lbl" for="setUnit">Jednotky v poptávce</label>
+            <select id="setUnit"><option value="auto">Rozpoznat</option><option value="mm">mm</option><option value="cm">cm</option><option value="m">m</option></select></div>
+          <div class="field"><label class="lbl" for="setEffort">Důkladnost</label>
+            <select id="setEffort"><option value="fast">Rychlá (~1 s)</option><option value="std">Standardní (~4 s)</option><option value="deep">Důkladná (~15 s)</option></select></div>
+        </div>
+        <label class="check" for="setRotate"><input type="checkbox" id="setRotate"> Díly lze otáčet o 90°</label>
+        <p class="hint">Řezy jsou gilotinové – každý vede přes celý kus skla, jak to vyžaduje lámání tabule. <b>Šířka řezu</b> je ztráta na každém řezu, <b>okrajový ořez</b> se odřízne ze všech čtyř hran tabule.</p>
+        <p class="serr" id="setErr" role="alert"></p>
+      </section>
+
+      <button type="button" class="btn btn-primary" id="runBtn">Spočítat řezání</button>
+      <div class="prog" id="prog" hidden aria-live="polite">
+        <div class="bar"><i id="progBar"></i></div>
+        <span id="progText"></span>
+      </div>
+    </aside>
+
+    <main class="results" id="results">
+      <div id="resNotice"></div>
+      <div id="resBody" class="results">
+        <div class="empty"><h2>Počítám nářezový plán…</h2><p>Zkouším stovky rozložení a hledám to s nejmenším prořezem.</p></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+'use strict';
+// @pure-start ==================================================================
+const collator = new Intl.Collator('cs', {numeric: true, sensitivity: 'base'});
+const norm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+
+function toNum(v) {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : NaN;
+  let s = String(v == null ? '' : v).replace(/[\s\u00a0\u202f]/g, '');
+  if (!s) return NaN;
+  s = s.replace(/(mm|cm|m|ks|pcs)\.?$/i, '');
+  if (/^-?\d+,\d+$/.test(s)) s = s.replace(',', '.');
+  if (!/^-?\d+(\.\d+)?$/.test(s)) return NaN;
+  return parseFloat(s);
+}
+const isNum = v => !Number.isNaN(toNum(v));
+const blank = v => v == null || String(v).trim() === '';
+
+function detectDelim(lines) {
+  const sample = lines.slice(0, 25), half = Math.ceil(sample.length / 2);
+  const has = ch => sample.filter(l => l.includes(ch)).length;
+  if (has('\t') >= half) return '\t';
+  if (has(';') >= half) return ';';
+  if (has(',') >= half) return ',';
+  return 'ws';
+}
+function splitLine(line, d) {
+  if (d === 'ws') return line.trim().split(/\s+/);
+  const out = []; let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (q) {
+      if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+      else cur += c;
+    } else if (c === '"' && cur.trim() === '') { q = true; cur = ''; }
+    else if (c === d) { out.push(cur.trim()); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur.trim());
+  return out;
+}
+
+const ROLE_RE = [
+  ['w', /sirk|width|^(w|s|b|x)( |\(|$)/],
+  ['h', /vysk|height|delk|length|^(h|v|l|y)( |\(|$)/],
+  ['q', /poc|^ks|kus|mnoz|qty|quant|count|pcs|^n( |$)/],
+  ['type', /typ|skl|druh|mater|type|odoln|trid/],
+  ['note', /pozn|note|popis|zakaznik|customer|stavb|akce|misto/],
+  ['order', /obj|zak|order|cisl|^c\.|^c( |$)|^id|poz|ref|kod|^#/],
+];
+const ROLE_NAME = {order: 'objednávka', type: 'typ skla', w: 'šířka', h: 'výška', q: 'počet', note: 'poznámka'};
+
+function headerMap(cells) {
+  const map = {}; let hits = 0, numeric = 0;
+  cells.forEach((c, i) => {
+    if (blank(c)) return;
+    if (isNum(c)) { numeric++; return; }
+    const n = norm(c);
+    for (const [role, re] of ROLE_RE) {
+      if (map[role] == null && re.test(n)) { map[role] = i; hits++; break; }
+    }
+  });
+  if (hits >= 2 || (hits >= 1 && numeric === 0)) return map;
+  return null;
+}
+
+function positionalMap(rows, base) {
+  const sample = rows.slice(0, 60);
+  const n = Math.max(0, ...sample.map(r => r.c.length));
+  const numCols = [], textCols = [];
+  for (let i = 0; i < n; i++) {
+    let nn = 0, tt = 0;
+    for (const r of sample) { const v = r.c[i]; if (blank(v)) continue; if (isNum(v)) nn++; else tt++; }
+    if (nn && nn >= tt * 4) numCols.push(i); else if (tt) textCols.push(i);
+  }
+  const m = Object.assign({}, base || {});
+  const used = () => new Set(Object.values(m));
+  let nums = numCols.filter(i => !used().has(i));
+  if (m.order == null && textCols.length && textCols[0] < (nums[0] == null ? Infinity : nums[0])) m.order = textCols[0];
+  if (m.order == null && nums.length >= 4) m.order = nums.shift();
+  if (m.w == null) m.w = nums.shift();
+  if (m.h == null) m.h = nums.shift();
+  if (m.q == null && nums.length) m.q = nums.shift();
+  if (m.type == null) {
+    for (const i of textCols) {
+      if (used().has(i)) continue;
+      const vals = sample.map(r => r.c[i]).filter(v => !blank(v));
+      if (vals.length && vals.filter(v => /^(ei|ew|el|e)\s?\d{2,3}/i.test(String(v).trim())).length >= vals.length * 0.6) { m.type = i; break; }
+    }
+  }
+  if (m.note == null) { const t = textCols.find(i => !used().has(i)); if (t != null) m.note = t; }
+  return m;
+}
+
+function parseDemand(text, unitSel) {
+  const res = {rows: [], pieces: [], warnings: [], error: '', unit: 'mm', unitAuto: false, map: null, orders: 0, types: []};
+  const lines = [];
+  String(text || '').split(/\r?\n/).forEach((l, i) => { if (l.trim()) lines.push({l, n: i + 1}); });
+  if (!lines.length) { res.error = 'Poptávka je prázdná – nahrajte soubor nebo vložte řádky z Excelu.'; return res; }
+  const d = detectDelim(lines.map(x => x.l));
+  const rows = lines.map(x => ({c: splitLine(x.l, d), n: x.n}));
+  let map = headerMap(rows[0].c), start = 0;
+  if (map) start = 1;
+  if (!map || map.w == null || map.h == null) map = positionalMap(rows.slice(start), map);
+  res.map = map;
+  if (map.w == null || map.h == null) { res.error = 'Nenašel jsem sloupce se šířkou a výškou. Přidejte záhlaví (Objednávka, Šířka, Výška, Počet).'; return res; }
+
+  const raw = [];
+  for (const r of rows.slice(start)) {
+    const c = r.c;
+    if (c.every(blank)) continue;
+    const w = toNum(c[map.w]), h = toNum(c[map.h]);
+    if (!(w > 0) || !(h > 0)) { res.warnings.push(`Řádek ${r.n}: chybí nebo nečitelný rozměr – přeskočeno`); continue; }
+    let q = 1;
+    if (map.q != null && !blank(c[map.q])) {
+      q = toNum(c[map.q]);
+      if (q === 0) continue;
+      if (!(q >= 1)) { res.warnings.push(`Řádek ${r.n}: nečitelný počet – počítám 1 ks`); q = 1; }
+      q = Math.round(q);
+      if (q > 2000) { res.warnings.push(`Řádek ${r.n}: počet ${q} ks omezen na 2000`); q = 2000; }
+    }
+    const order = map.order != null && !blank(c[map.order]) ? String(c[map.order]).trim() : `ř. ${r.n}`;
+    const type = map.type != null && !blank(c[map.type]) ? String(c[map.type]).trim() : '';
+    const note = map.note != null && !blank(c[map.note]) ? String(c[map.note]).trim() : '';
+    raw.push({order, type, w, h, q, note, n: r.n});
+  }
+  if (!raw.length) { res.error = 'V poptávce není žádný řádek s platnými rozměry.'; return res; }
+
+  let unit = unitSel;
+  if (unit === 'auto') {
+    const maxDim = Math.max(...raw.map(r => Math.max(r.w, r.h)));
+    unit = maxDim <= 6 ? 'm' : 'mm';
+    res.unitAuto = unit !== 'mm';
+  }
+  res.unit = unit;
+  const f = unit === 'm' ? 1000 : unit === 'cm' ? 10 : 1;
+  const orders = new Set(), types = new Set();
+  for (const r of raw) {
+    r.w = Math.round(r.w * f); r.h = Math.round(r.h * f);
+    orders.add(r.order); types.add(r.type);
+    for (let i = 0; i < r.q; i++) res.pieces.push({order: r.order, type: r.type, w: r.w, h: r.h, note: r.note, line: r.n});
+  }
+  res.rows = raw; res.orders = orders.size; res.types = [...types].sort(collator.compare);
+  return res;
+}
+
+/* ---------- Optimalizace řezu (gilotinové řezy, více heuristik + náhodné restarty) ---------- */
+const Engine = (() => {
+  function rng32(seed) {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6D2B79F5) >>> 0; let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const RULES = ['LF', 'LFL', 'LFBL', 'LFBAF', 'BSSF', 'BLSF', 'BAF', 'FILL', 'EXACT'];
+  const NSPLIT = 8;
+
+  // Rozměry dílů i tabule se počítají „včetně řezu“: díl + k, tabule (bez okrajů) + k.
+  function prepare(pieces, cfg) {
+    const k = cfg.kerf, BW = cfg.W - 2 * cfg.trim + k, BH = cfg.H - 2 * cfg.trim + k;
+    const map = new Map(), unfit = [];
+    for (const p of pieces) {
+      let a = p.w, b = p.h;
+      if (cfg.rotate && a < b) { const t = a; a = b; b = t; }
+      const key = a + 'x' + b;
+      let t = map.get(key);
+      if (!t) {
+        const w = a + k, h = b + k, canRot = !!cfg.rotate && a !== b;
+        const fits = (w <= BW && h <= BH) || (canRot && h <= BW && w <= BH);
+        t = {w, h, a: w * h, ra: a * b, canRot, fits, list: []};
+        map.set(key, t);
+      }
+      (t.fits ? t.list : unfit).push(p);
+    }
+    const types = [...map.values()].filter(t => t.fits && t.list.length).sort((x, y) => y.a - x.a || Math.max(y.w, y.h) - Math.max(x.w, x.h));
+    let total = 0, area = 0, minSide = Infinity, big = 0;
+    for (const t of types) {
+      t.n = t.list.length;
+      t.list.sort((p, q) => collator.compare(p.order, q.order));
+      total += t.n; area += t.a * t.n; minSide = Math.min(minSide, t.w, t.h);
+      // díl, který se s žádným jiným velkým dílem nevejde vedle sebe ani nad sebe
+      const bigN = t.w > BW / 2 && t.h > BH / 2;
+      const rotFits = t.canRot && t.h <= BW && t.w <= BH;
+      const bigR = t.h > BW / 2 && t.w > BH / 2;
+      const nFits = t.w <= BW && t.h <= BH;
+      if ((!nFits || bigN) && (!rotFits || bigR)) big += t.n;
+    }
+    const lb = total ? Math.max(1, Math.ceil(area / (BW * BH) - 1e-9), big) : 0;
+    return {types, unfit, BW, BH, k, total, lb, minSide, cfg};
+  }
+
+  function makeParams(ctx, rule, split, noise, rng) {
+    const T = ctx.types, n = T.length, jit = new Float64Array(n);
+    for (let i = 0; i < n; i++) jit[i] = noise ? 1 + noise * (rng() * 2 - 1) : 1;
+    let order = null;
+    if (rule[0] === 'L') {
+      order = Array.from({length: n}, (_, i) => i);
+      if (rule === 'LFL') order.sort((a, b) => Math.max(T[b].w, T[b].h) * jit[b] - Math.max(T[a].w, T[a].h) * jit[a] || T[b].a - T[a].a);
+      else if (noise) order.sort((a, b) => T[b].a * jit[b] - T[a].a * jit[a]);
+    }
+    return {rule, split, noise, jit, order, mode: 'plain', K: 1};
+  }
+  function randomParams(ctx, rng) {
+    return makeParams(ctx, RULES[Math.floor(rng() * RULES.length)], Math.floor(rng() * NSPLIT), 0.03 + rng() * 0.3, rng);
+  }
+
+  const newSheet = ctx => ({free: [{x: 0, y: 0, w: ctx.BW, h: ctx.BH}], pl: [], cuts: [], used: 0});
+  const cloneSheet = s => ({free: s.free.map(f => ({x: f.x, y: f.y, w: f.w, h: f.h})), pl: s.pl.slice(), cuts: s.cuts.slice(), used: s.used});
+
+  function pick(ctx, s, cnt, P, rng) {
+    const T = ctx.types, F = s.free, rule = P.rule;
+    if (rule[0] === 'L') {
+      let fallback = null;
+      for (let oi = 0; oi < P.order.length; oi++) {
+        const i = P.order[oi];
+        if (!cnt[i]) continue;
+        const t = T[i];
+        let m = null, b1 = Infinity, b2 = Infinity;
+        for (let j = 0; j < F.length; j++) {
+          const f = F[j];
+          for (let o = 0; o < 2; o++) {
+            if (o === 1 && !t.canRot) break;
+            const w = o ? t.h : t.w, h = o ? t.w : t.h;
+            if (w > f.w || h > f.h) continue;
+            let s1, s2;
+            if (rule === 'LFBL') { s1 = f.y + h; s2 = f.x; }
+            else if (rule === 'LFBAF') { s1 = f.w * f.h - w * h; s2 = Math.min(f.w - w, f.h - h); }
+            else { const dw = f.w - w, dh = f.h - h; s1 = Math.min(dw, dh); s2 = Math.max(dw, dh); }
+            if (s1 < b1 || (s1 === b1 && s2 < b2)) { b1 = s1; b2 = s2; m = {t: i, f: j, w, h}; }
+          }
+        }
+        if (m) {
+          if (!fallback) fallback = m;
+          if (!P.noise || rng() >= P.noise * 0.6) return m;
+        }
+      }
+      return fallback;
+    }
+    let m = null, b1 = Infinity, b2 = Infinity;
+    for (let j = 0; j < F.length; j++) {
+      const f = F[j], fa = f.w * f.h;
+      for (let i = 0; i < T.length; i++) {
+        if (!cnt[i]) continue;
+        const t = T[i];
+        if (t.a > fa) continue;
+        const J = P.jit[i];
+        for (let o = 0; o < 2; o++) {
+          if (o === 1 && !t.canRot) break;
+          const w = o ? t.h : t.w, h = o ? t.w : t.h;
+          if (w > f.w || h > f.h) continue;
+          const dw = f.w - w, dh = f.h - h;
+          let s1, s2;
+          switch (rule) {
+            case 'BSSF': s1 = Math.min(dw, dh) * J; s2 = Math.max(dw, dh); break;
+            case 'BLSF': s1 = Math.max(dw, dh) * J; s2 = Math.min(dw, dh); break;
+            case 'BAF': s1 = fa - t.a * J; s2 = Math.min(dw, dh); break;
+            case 'FILL': s1 = -(t.a * J) / fa; s2 = Math.min(dw, dh); break;
+            default: s1 = (dw === 0 ? 0 : 1) + (dh === 0 ? 0 : 1); s2 = -t.a * J;
+          }
+          if (s1 < b1 || (s1 === b1 && s2 < b2)) { b1 = s1; b2 = s2; m = {t: i, f: j, w, h}; }
+        }
+      }
+    }
+    return m;
+  }
+
+  // Umístí díl do levého horního rohu volného obdélníku a zbytek rozdělí jedním gilotinovým řezem.
+  function place(s, m, split, minSide) {
+    const f = s.free[m.f], w = m.w, h = m.h, dw = f.w - w, dh = f.h - h;
+    s.pl.push({t: m.t, x: f.x, y: f.y, w, h});
+    let H;
+    switch (split) {
+      case 0: H = dw <= dh; break;
+      case 1: H = dw > dh; break;
+      case 2: H = Math.max(f.w * dh, dw * h) >= Math.max(dw * f.h, w * dh); break;
+      case 3: H = Math.max(f.w * dh, dw * h) < Math.max(dw * f.h, w * dh); break;
+      case 4: H = f.w <= f.h; break;
+      case 5: H = f.w > f.h; break;
+      case 6: H = true; break;
+      default: H = false;
+    }
+    const last = s.free.pop();
+    if (m.f < s.free.length) s.free[m.f] = last;
+    let r1, r2;
+    if (H) {
+      if (dh > 0) s.cuts.push([f.x, f.y + h, f.x + f.w, f.y + h]);
+      if (dw > 0) s.cuts.push([f.x + w, f.y, f.x + w, f.y + h]);
+      r1 = {x: f.x + w, y: f.y, w: dw, h: h};
+      r2 = {x: f.x, y: f.y + h, w: f.w, h: dh};
+    } else {
+      if (dw > 0) s.cuts.push([f.x + w, f.y, f.x + w, f.y + f.h]);
+      if (dh > 0) s.cuts.push([f.x, f.y + h, f.x + w, f.y + h]);
+      r1 = {x: f.x + w, y: f.y, w: dw, h: f.h};
+      r2 = {x: f.x, y: f.y + h, w: w, h: dh};
+    }
+    if (r1.w >= minSide && r1.h >= minSide) s.free.push(r1);
+    if (r2.w >= minSide && r2.h >= minSide) s.free.push(r2);
+  }
+
+  function fillSheet(ctx, cnt, P, rng) {
+    const s = newSheet(ctx);
+    for (;;) {
+      const m = pick(ctx, s, cnt, P, rng);
+      if (!m) break;
+      place(s, m, P.split, ctx.minSide);
+      cnt[m.t]--; s.used += ctx.types[m.t].ra;
+    }
+    return s;
+  }
+
+  function run(ctx, P, rng, cnt0, total0) {
+    const cnt = cnt0 || ctx.types.map(t => t.n), sheets = [];
+    let rem = cnt0 ? total0 : ctx.total;
+    while (rem > 0) {
+      let s;
+      if (P.mode === 'best') {
+        let bestS = null, bestC = null;
+        for (let k = 0; k < P.K; k++) {
+          const c = cnt.slice(), Pk = k === 0 ? P : randomParams(ctx, rng);
+          const sk = fillSheet(ctx, c, Pk, rng);
+          if (!bestS || sk.used > bestS.used) { bestS = sk; bestC = c; }
+        }
+        s = bestS; for (let i = 0; i < cnt.length; i++) cnt[i] = bestC[i];
+      } else s = fillSheet(ctx, cnt, P, rng);
+      if (!s.pl.length) break;
+      rem -= s.pl.length; sheets.push(s);
+    }
+    return sheets;
+  }
+
+  function tryInsertAll(ctx, sheets, pls, split) {
+    const T = ctx.types;
+    for (const pl of pls) {
+      const t = T[pl.t];
+      let best = null, bs = -1, b1 = Infinity, b2 = Infinity;
+      for (let si = 0; si < sheets.length; si++) {
+        const F = sheets[si].free;
+        for (let j = 0; j < F.length; j++) {
+          const f = F[j];
+          for (let o = 0; o < 2; o++) {
+            if (o === 1 && !t.canRot) break;
+            const w = o ? t.h : t.w, h = o ? t.w : t.h;
+            if (w > f.w || h > f.h) continue;
+            const dw = f.w - w, dh = f.h - h, s1 = Math.min(dw, dh), s2 = Math.max(dw, dh);
+            if (s1 < b1 || (s1 === b1 && s2 < b2)) { b1 = s1; b2 = s2; best = {t: pl.t, f: j, w, h}; bs = si; }
+          }
+        }
+      }
+      if (!best) return false;
+      place(sheets[bs], best, split, ctx.minSide);
+      sheets[bs].used += t.ra;
+    }
+    return true;
+  }
+
+  // Zkusí vyprázdnit nejméně využitou tabuli tím, že její díly rozmístí do zbytků ostatních tabulí.
+  function eliminate(ctx, sheets) {
+    let cur = sheets;
+    while (cur.length > Math.max(1, ctx.lb)) {
+      let vi = 0;
+      for (let i = 1; i < cur.length; i++) if (cur[i].used < cur[vi].used) vi = i;
+      const pls = cur[vi].pl.slice().sort((a, b) => ctx.types[b.t].a - ctx.types[a.t].a);
+      let next = null;
+      for (const split of [0, 2, 6, 7]) {
+        const others = [];
+        for (let i = 0; i < cur.length; i++) if (i !== vi) others.push(cloneSheet(cur[i]));
+        if (tryInsertAll(ctx, others, pls, split)) { next = others; break; }
+      }
+      if (!next) break;
+      cur = next;
+    }
+    return cur;
+  }
+
+  function evaluate(ctx, sheets) {
+    const A = ctx.BW * ctx.BH; let q = 0;
+    for (const s of sheets) { const u = s.used / A; q += u * u; }
+    return {n: sheets.length, q};
+  }
+
+  // „Rozbij a přeskládej“: vezme pár tabulí, jejich díly poskládá znovu. Přijme méně tabulí,
+  // nebo stejný počet s odpadem soustředěným do méně tabulí (to pak umožní některou vyprázdnit).
+  function lnsStep(ctx, sheets, rng) {
+    const n = sheets.length;
+    if (n < 2) return null;
+    const k = Math.min(n, 2 + Math.floor(rng() * 5)), idx = new Set();
+    if (rng() < 0.6) { let vi = 0; for (let i = 1; i < n; i++) if (sheets[i].used < sheets[vi].used) vi = i; idx.add(vi); }
+    while (idx.size < k) idx.add(Math.floor(rng() * n));
+    const cnt = new Array(ctx.types.length).fill(0), A = ctx.BW * ctx.BH;
+    let tot = 0, oldQ = 0;
+    for (const i of idx) { for (const pl of sheets[i].pl) { cnt[pl.t]++; tot++; } const u = sheets[i].used / A; oldQ += u * u; }
+    let bestSub = null, bestQ = -1;
+    for (let tries = 0; tries < 3; tries++) {
+      const P = randomParams(ctx, rng);
+      if (rng() < 0.3) { P.mode = 'best'; P.K = 4; }
+      const sub = run(ctx, P, rng, cnt.slice(), tot);
+      if (sub.length > k) continue;
+      let q = 0; for (const s of sub) { const u = s.used / A; q += u * u; }
+      if (!bestSub || sub.length < bestSub.length || (sub.length === bestSub.length && q > bestQ)) { bestSub = sub; bestQ = q; }
+    }
+    if (!bestSub || (bestSub.length === k && bestQ <= oldQ + 1e-12)) return null;
+    return sheets.filter((_, i) => !idx.has(i)).concat(bestSub);
+  }
+
+  async function solve(ctx, budget, onProgress, cancelled, seed) {
+    if (!ctx.total) return {sheets: [], runs: 0};
+    const rng = rng32(seed || 20260924);
+    const det = [];
+    for (const r of RULES) for (let sp = 0; sp < NSPLIT; sp++) det.push([r, sp]);
+    const t0 = performance.now();
+    let lastYield = t0, best = null, runs = 0, tried = 0;
+    for (;;) {
+      if (runs >= det.length && runs % 3 !== 0 && best.n > 1) {
+        // vylepšování nejlepšího řešení
+        let cur = best.sheets, changed = false;
+        for (let i = 0; i < 25; i++) {
+          const next = lnsStep(ctx, cur, rng); tried += 3;
+          if (next) { cur = next; changed = true; }
+        }
+        if (changed) {
+          if (cur.length > ctx.lb) cur = eliminate(ctx, cur);
+          const ev = evaluate(ctx, cur);
+          best = {n: ev.n, q: ev.q, sheets: cur};
+        }
+      } else {
+        let P;
+        if (runs < det.length) P = makeParams(ctx, det[runs][0], det[runs][1], 0, rng);
+        else { P = randomParams(ctx, rng); if (runs % 2 === 0) { P.mode = 'best'; P.K = 6; } }
+        let sheets = run(ctx, P, rng); tried++;
+        if (sheets.length > ctx.lb && (!best || sheets.length <= best.n + 1)) sheets = eliminate(ctx, sheets);
+        const ev = evaluate(ctx, sheets);
+        if (!best || ev.n < best.n || (ev.n === best.n && ev.q > best.q + 1e-12)) best = {n: ev.n, q: ev.q, sheets};
+      }
+      runs++;
+      const now = performance.now();
+      if (now - t0 >= budget) break;
+      if (best.n <= ctx.lb && runs >= 24) break;
+      if (now - lastYield > 50) {
+        if (onProgress) onProgress({runs: tried, best: best.n, lb: ctx.lb, frac: (now - t0) / budget});
+        await new Promise(r => setTimeout(r, 0));
+        if (cancelled && cancelled()) break;
+        lastYield = performance.now();
+      }
+    }
+    return {sheets: best.sheets, runs: tried};
+  }
+
+  // Převod výsledku na skutečné souřadnice tabule (mm) a přiřazení konkrétních dílů objednávek.
+  function materialize(ctx, sheets) {
+    const {W, H, trim} = ctx.cfg, k = ctx.k, BW = ctx.BW, BH = ctx.BH;
+    const X = v => v <= 0 ? trim : v >= BW ? W - trim : trim + v - k / 2;
+    const Y = v => v <= 0 ? trim : v >= BH ? H - trim : trim + v - k / 2;
+    const sorted = sheets.slice().sort((a, b) => b.used - a.used);
+    const ptr = new Int32Array(ctx.types.length);
+    return sorted.map((s, si) => {
+      const items = s.pl.slice().sort((a, b) => a.y - b.y || a.x - b.x).map(pl => {
+        const t = ctx.types[pl.t], p = t.list[ptr[pl.t]++];
+        const w = pl.w - k, h = pl.h - k;
+        return {p, x: trim + pl.x, y: trim + pl.y, w, h, rot: w !== p.w};
+      });
+      let rem = null;
+      for (const f of s.free) {
+        const w = f.w - k, h = f.h - k;
+        if (w > 0 && h > 0 && (!rem || w * h > rem.w * rem.h)) rem = {x: trim + f.x, y: trim + f.y, w, h};
+      }
+      const cuts = s.cuts.map(c => [X(c[0]), Y(c[1]), X(c[2]), Y(c[3])]);
+      return {idx: si + 1, items, used: s.used, util: s.used / (W * H), rem, cuts, nCuts: s.cuts.length + (trim > 0 ? 4 : 0)};
+    });
+  }
+
+  return {prepare, solve, materialize, rng: rng32};
+})();
+
+function sampleDemand() {
+  const r = Engine.rng(4101);
+  const rnd = (a, b) => Math.round((a + r() * (b - a)) / 5) * 5;
+  const notes = ['', '', '', '', 'dveře', 'nadsvětlík', 'boční světlík', 'příčka', 'průhled'];
+  const out = ['Objednávka\tTyp skla\tŠířka\tVýška\tPočet\tPoznámka'];
+  for (let i = 0; i < 200; i++) {
+    const id = String(4101 + i), type = r() < 0.62 ? 'EI 30' : 'EI 60';
+    const npos = r() < 0.4 ? 2 : 1;
+    for (let j = 0; j < npos; j++) {
+      const c = r(); let w, h;
+      if (c < 0.55) { w = rnd(250, 700); h = rnd(300, 950); }
+      else if (c < 0.87) { w = rnd(450, 950); h = rnd(650, 1450); }
+      else { w = rnd(650, 960); h = rnd(1450, 1960); }
+      if (r() < 0.2) { const t = w; w = h; h = t; }
+      const q = r() < 0.7 ? 1 : r() < 0.85 ? 2 : 3;
+      out.push([id, type, w, h, q, notes[Math.floor(r() * notes.length)]].join('\t'));
+    }
+  }
+  return out.join('\n');
+}
+// @pure-end ====================================================================
+
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+  const fmt = (n, d = 0) => Number(n).toLocaleString('cs-CZ', {minimumFractionDigits: d, maximumFractionDigits: d});
+  const mm = v => String(Math.round(v * 10) / 10).replace('.', ',');
+  const plural = (n, a, b, c) => n === 1 ? a : (n >= 2 && n <= 4 ? b : c);
+  const cssStr = s => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\n\r]/g, ' ');
+
+  const DEFAULTS = {W: 2000, H: 1000, kerf: 2, trim: 0, rotate: true, unit: 'auto', effort: 'std', view: 's'};
+  const BUDGET = {fast: 1200, std: 4000, deep: 15000};
+  const LS_KEY = 'rezani-skla/nastaveni/v1';
+  let framed = true;
+  try { framed = window.self !== window.top; } catch (e) { framed = true; }
+
+  function loadSettings() {
+    try { const s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); return Object.assign({}, DEFAULTS, s || {}); }
+    catch (e) { return Object.assign({}, DEFAULTS); }
+  }
+  function saveSettings(s) { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch (e) { /* bez úložiště */ } }
+  let settings = loadSettings();
+
+  const els = {
+    file: $('#file'), drop: $('#drop'), text: $('#demandText'), info: $('#parseInfo'),
+    run: $('#runBtn'), prog: $('#prog'), progBar: $('#progBar'), progText: $('#progText'),
+    results: $('#results'), notice: $('#resNotice'), body: $('#resBody'), spec: $('#spec'), setErr: $('#setErr'),
+    hl: $('#hlStyle'),
+  };
+  const inp = {W: $('#setW'), H: $('#setH'), kerf: $('#setKerf'), trim: $('#setTrim'), rotate: $('#setRotate'), unit: $('#setUnit'), effort: $('#setEffort')};
+
+  let isSample = false, fileName = '', lastResult = null, runSeq = 0, pinned = '';
+
+  function fillSettings() {
+    inp.W.value = settings.W; inp.H.value = settings.H; inp.kerf.value = settings.kerf; inp.trim.value = settings.trim;
+    inp.rotate.checked = !!settings.rotate; inp.unit.value = settings.unit; inp.effort.value = settings.effort;
+    els.results.dataset.view = settings.view;
+    renderSpec();
+  }
+  function readSettings() {
+    const n = el => Number(String(el.value).replace(',', '.'));
+    const s = Object.assign({}, settings, {
+      W: Math.round(n(inp.W)), H: Math.round(n(inp.H)), kerf: n(inp.kerf), trim: Math.round(n(inp.trim)),
+      rotate: inp.rotate.checked, unit: inp.unit.value, effort: inp.effort.value,
+    });
+    let err = '';
+    if (!(s.W >= 100 && s.W <= 10000) || !(s.H >= 100 && s.H <= 10000)) err = 'Rozměr tabule musí být mezi 100 a 10 000 mm.';
+    else if (!(s.kerf >= 0 && s.kerf <= 20)) err = 'Šířka řezu musí být 0–20 mm.';
+    else if (!(s.trim >= 0) || s.trim * 2 >= Math.min(s.W, s.H) - 50) err = 'Okrajový ořez je větší, než tabule dovolí.';
+    return {s, err};
+  }
+  function renderSpec() {
+    const s = settings;
+    els.spec.innerHTML = `<span>Tabule <b>${fmt(s.W)} × ${fmt(s.H)}</b> mm</span><span>řez <b>${mm(s.kerf)}</b> mm</span><span>okraj <b>${fmt(s.trim)}</b> mm</span><span>otáčení <b>${s.rotate ? 'ano' : 'ne'}</b></span>`;
+  }
+  function onSettingsChange() {
+    const {s, err} = readSettings();
+    els.setErr.textContent = err;
+    if (err) return;
+    settings = s; saveSettings(settings); renderSpec(); markStale();
+  }
+  function markStale() {
+    if (!lastResult) return;
+    els.results.classList.add('stale');
+    els.run.textContent = 'Přepočítat řezání';
+    els.notice.innerHTML = `<div class="notice info"><b>Poptávka nebo nastavení se změnily.</b> <span>Klikněte na „Přepočítat řezání“ (nebo Ctrl + Enter).</span></div>`;
+  }
+
+  /* ---------- Poptávka ---------- */
+  function renderParseInfo(parsed) {
+    if (parsed.error) { els.info.innerHTML = `<p class="err">${esc(parsed.error)}</p>`; return; }
+    const n = parsed.pieces.length, o = parsed.orders, t = parsed.types.filter(Boolean).length;
+    const cols = ['order', 'type', 'w', 'h', 'q', 'note'].filter(r => parsed.map[r] != null).map(r => ROLE_NAME[r]);
+    let h = `<p class="ok">${fileName ? `<b>${esc(fileName)}</b> · ` : ''}<b>${fmt(o)}</b> ${plural(o, 'objednávka', 'objednávky', 'objednávek')} · <b>${fmt(n)}</b> ${plural(n, 'díl', 'díly', 'dílů')}${t > 1 ? ` · ${t} typy skla` : ''}</p>`;
+    h += `<p class="muted">Sloupce: ${cols.join(', ')}${parsed.unitAuto ? ` · rozměry vypadají jako ${parsed.unit === 'm' ? 'metry' : parsed.unit} – přepočteno na mm` : ''}</p>`;
+    if (parsed.warnings.length) {
+      const w = parsed.warnings;
+      h += `<ul>${w.slice(0, 6).map(x => `<li>${esc(x)}</li>`).join('')}${w.length > 6 ? `<li>… a dalších ${w.length - 6}</li>` : ''}</ul>`;
+    }
+    els.info.innerHTML = h;
+  }
+
+  async function loadFile(f) {
+    const name = f.name.toLowerCase();
+    try {
+      let text;
+      if (/\.(xlsx|xlsm|xls|ods)$/.test(name)) {
+        if (!window.XLSX) throw new Error('Čtečka Excelu se nenačetla (bez internetu?). Uložte soubor jako CSV, nebo řádky zkopírujte z Excelu do pole.');
+        const wb = window.XLSX.read(await f.arrayBuffer(), {type: 'array'});
+        let rows = [];
+        for (const sn of wb.SheetNames) {
+          rows = window.XLSX.utils.sheet_to_json(wb.Sheets[sn], {header: 1, raw: true, defval: '', blankrows: false});
+          if (rows.length) break;
+        }
+        text = rows.map(r => r.map(c => String(c).replace(/[\t\r\n]+/g, ' ')).join('\t')).join('\n');
+      } else {
+        const buf = await f.arrayBuffer();
+        try { text = new TextDecoder('utf-8', {fatal: true}).decode(buf); }
+        catch (e) { text = new TextDecoder('windows-1250').decode(buf); }
+        text = text.replace(/^\ufeff/, '');
+      }
+      els.text.value = text; isSample = false; fileName = f.name;
+      compute();
+    } catch (err) {
+      els.info.innerHTML = `<p class="err">${esc(err.message || 'Soubor se nepodařilo přečíst.')}</p>`;
+    }
+  }
+
+  /* ---------- Výpočet ---------- */
+  function showProgress(frac, text) {
+    els.prog.hidden = false;
+    els.progBar.style.width = (Math.max(0, Math.min(1, frac)) * 100).toFixed(1) + '%';
+    els.progText.textContent = text;
+  }
+
+  async function compute(budgetOverride) {
+    const {s, err} = readSettings();
+    els.setErr.textContent = err;
+    if (err) return;
+    settings = s; saveSettings(settings); renderSpec();
+    const parsed = parseDemand(els.text.value, settings.unit);
+    renderParseInfo(parsed);
+    if (parsed.error) {
+      lastResult = null; els.results.classList.remove('stale'); els.notice.innerHTML = '';
+      els.body.innerHTML = `<div class="empty"><h2>Zatím není co řezat</h2><p>${esc(parsed.error)}</p></div>`;
+      return;
+    }
+    const myRun = ++runSeq;
+    const cancelled = () => myRun !== runSeq;
+    els.run.disabled = true; els.run.textContent = 'Počítám…';
+    const cfg = {W: settings.W, H: settings.H, kerf: settings.kerf, trim: settings.trim, rotate: settings.rotate};
+    const gm = new Map();
+    for (const p of parsed.pieces) { if (!gm.has(p.type)) gm.set(p.type, []); gm.get(p.type).push(p); }
+    const keys = [...gm.keys()].sort(collator.compare);
+    const total = parsed.pieces.length, budget = budgetOverride || BUDGET[settings.effort] || 4000;
+    const t0 = performance.now();
+    const groups = []; let done = 0, runs = 0;
+    showProgress(0, 'Připravuji…');
+    await new Promise(r => setTimeout(r, 20));
+    for (let gi = 0; gi < keys.length; gi++) {
+      const pcs = gm.get(keys[gi]);
+      const label = keys[gi] || (keys.length > 1 ? 'Bez typu' : 'Sklo');
+      const ctx = Engine.prepare(pcs, cfg);
+      const share = Math.max(250, budget * pcs.length / total);
+      const res = await Engine.solve(ctx, share, pr => {
+        showProgress((done + Math.min(1, pr.frac) * pcs.length) / total,
+          `${keys.length > 1 ? label + ': ' : ''}vyzkoušeno ${fmt(pr.runs)} variant · nejlépe ${fmt(pr.best)} ${plural(pr.best, 'tabule', 'tabule', 'tabulí')} (min. ${fmt(pr.lb)})`);
+      }, cancelled, 4101 + gi);
+      if (cancelled()) return;
+      groups.push({gid: 'g' + gi, label, ctx, sheets: Engine.materialize(ctx, res.sheets)});
+      done += pcs.length; runs += res.runs;
+    }
+    els.run.disabled = false; els.run.textContent = 'Spočítat řezání';
+    els.prog.hidden = true;
+    lastResult = {cfg, parsed, groups, runs, ms: performance.now() - t0, multi: keys.length > 1};
+    renderResults(lastResult);
+  }
+
+  /* ---------- Vykreslení ---------- */
+  function pieceSVG(it) {
+    const {x, y, w, h, p} = it, id = String(p.order), dims = `${mm(w)}×${mm(h)}`;
+    const tip = `Objednávka ${id} · ${mm(p.w)} × ${mm(p.h)} mm${it.rot ? ' (otočeno)' : ''}${p.note ? ' · ' + p.note : ''}`;
+    const fs = Math.max(30, Math.min(66, Math.min(w, h) * 0.2));
+    const pad = fs * 0.7, cx = x + w / 2, cy = y + h / 2;
+    const wId = id.length * fs * 0.56 + pad, fd = fs * 0.8, wD = dims.length * fd * 0.62 + pad;
+    let t = '';
+    if (h >= fs * 2.7 && w >= Math.max(wId, wD)) {
+      t = `<text x="${cx}" y="${cy - fs * 0.12}" font-size="${fs.toFixed(1)}" text-anchor="middle">${esc(id)}<tspan class="d" x="${cx}" dy="${(fs * 1.05).toFixed(1)}" font-size="${fd.toFixed(1)}">${dims}</tspan></text>`;
+    } else if (h >= fs * 1.35 && w >= wId) {
+      t = `<text x="${cx}" y="${cy + fs * 0.35}" font-size="${fs.toFixed(1)}" text-anchor="middle">${esc(id)}</text>`;
+    } else {
+      const f2 = 26;
+      if (h >= f2 * 1.3 && w >= id.length * f2 * 0.56 + 10) t = `<text x="${cx}" y="${cy + f2 * 0.35}" font-size="${f2}" text-anchor="middle">${esc(id)}</text>`;
+    }
+    return `<g class="pc" data-o="${esc(id)}"><title>${esc(tip)}</title><rect x="${x}" y="${y}" width="${w}" height="${h}"/>${t}</g>`;
+  }
+
+  function sheetSVG(sh, cfg, label) {
+    const {W, H, trim} = cfg, pad = 4;
+    let o = `<svg class="sv" viewBox="${-pad} ${-pad} ${W + 2 * pad} ${H + 2 * pad}" role="img" aria-label="${esc(label)}">`;
+    o += `<rect class="s-waste" x="0" y="0" width="${W}" height="${H}"/>`;
+    if (trim > 0) o += `<path class="s-trim" fill-rule="evenodd" d="M0 0H${W}V${H}H0Z M${trim} ${trim}V${H - trim}H${W - trim}V${trim}Z"/>`;
+    if (sh.cuts.length) o += `<path class="s-cut" d="${sh.cuts.map(c => `M${+c[0].toFixed(1)} ${+c[1].toFixed(1)}L${+c[2].toFixed(1)} ${+c[3].toFixed(1)}`).join('')}"/>`;
+    const r = sh.rem;
+    if (r && r.w >= 150 && r.h >= 150 && r.w * r.h >= 60000) {
+      o += `<rect class="s-rem" x="${r.x + 6}" y="${r.y + 6}" width="${r.w - 12}" height="${r.h - 12}"/>`;
+      const txt = `zbytek ${mm(r.w)}×${mm(r.h)}`, fs = Math.max(26, Math.min(52, Math.min(r.w, r.h) * 0.12));
+      if (r.w >= txt.length * fs * 0.62 + 30 && r.h >= fs * 2) o += `<text class="s-remtxt" x="${r.x + r.w / 2}" y="${r.y + r.h / 2 + fs * 0.35}" font-size="${fs.toFixed(1)}" text-anchor="middle">${txt}</text>`;
+    }
+    for (const it of sh.items) o += pieceSVG(it);
+    o += `<rect class="s-edge" x="0" y="0" width="${W}" height="${H}"/>`;
+    return o + '</svg>';
+  }
+
+  function sheetCard(g, sh, cfg, multi) {
+    const pct = sh.util * 100, cls = pct >= 85 ? 'good' : pct < 60 ? 'warn' : '';
+    const title = `${multi ? g.label + ' · ' : ''}Tabule ${sh.idx}`;
+    const r = sh.rem;
+    const remTxt = r && r.w >= 100 && r.h >= 100 ? `<span>největší zbytek <b>${mm(r.w)} × ${mm(r.h)}</b> mm</span>` : '<span>bez použitelného zbytku</span>';
+    const list = sh.items.map(it => `<li><b>${esc(it.p.order)}</b> ${mm(it.p.w)}×${mm(it.p.h)}${it.rot ? ' ↻' : ''}${it.p.note ? ' · ' + esc(it.p.note) : ''}</li>`).join('');
+    return `<article class="sheet" id="${g.gid}-s${sh.idx}">
+      <header class="sh-h"><h3>${esc(title)}</h3><span class="pill ${cls}">${fmt(pct, 1)} %</span><span class="sh-m">${sh.items.length} ${plural(sh.items.length, 'díl', 'díly', 'dílů')} · ${sh.nCuts} ${plural(sh.nCuts, 'řez', 'řezy', 'řezů')}</span></header>
+      ${sheetSVG(sh, cfg, title + `, využití ${fmt(pct, 1)} %`)}
+      <div class="sh-f">${remTxt}</div>
+      <details class="sh-d"><summary>Seznam dílů</summary><ol>${list}</ol></details>
+    </article>`;
+  }
+
+  function renderResults(R) {
+    const {cfg, parsed, groups, multi} = R;
+    const A = cfg.W * cfg.H / 1e6;
+    let nSheets = 0, lb = 0, pieceArea = 0, nPieces = 0;
+    const unfit = [];
+    for (const g of groups) {
+      nSheets += g.sheets.length; lb += g.ctx.lb; nPieces += g.ctx.total;
+      for (const s of g.sheets) for (const it of s.items) pieceArea += it.w * it.h;
+      for (const p of g.ctx.unfit) unfit.push({g, p});
+    }
+    pieceArea /= 1e6;
+    const sheetArea = nSheets * A, waste = sheetArea - pieceArea, util = sheetArea ? pieceArea / sheetArea : 0;
+    els.results.classList.remove('stale');
+
+    let notice = '';
+    if (isSample) notice += `<div class="notice info"><b>Ukázková data</b><span>200 smyšlených objednávek protipožárního skla EI 30 a EI 60. Nahrajte vlastní poptávku vlevo.</span></div>`;
+    if (unfit.length) {
+      notice += `<div class="notice bad"><b>${fmt(unfit.length)} ${plural(unfit.length, 'díl je větší', 'díly jsou větší', 'dílů je větších')} než tabule ${fmt(cfg.W)} × ${fmt(cfg.H)} mm${cfg.trim ? ' po ořezu okrajů' : ''}</b><span>– nejsou v plánu.</span>
+        <ul>${unfit.slice(0, 12).map(u => `<li>${esc(u.p.order)}: ${mm(u.p.w)} × ${mm(u.p.h)} mm${multi ? ' (' + esc(u.g.label) + ')' : ''}</li>`).join('')}${unfit.length > 12 ? `<li>… a dalších ${unfit.length - 12}</li>` : ''}</ul></div>`;
+    }
+    els.notice.innerHTML = notice;
+
+    if (!nPieces) { els.body.innerHTML = `<div class="empty"><h2>Žádný díl se nevejde na tabuli</h2><p>Zkontrolujte rozměr tabule v nastavení nebo jednotky v poptávce.</p></div>`; return; }
+
+    const optimal = nSheets === lb;
+    let h = `<section class="kpis" aria-label="Souhrn">
+      <div class="kpi"><span class="l">Tabulí</span><span class="v">${fmt(nSheets)}</span><span class="s">${optimal ? '<span class="chip">nejnižší možný počet</span>' : `teoretické minimum ${fmt(lb)}`}</span></div>
+      <div class="kpi"><span class="l">Využití skla</span><span class="v">${fmt(util * 100, 1)}<small>%</small></span><span class="s">díly ${fmt(pieceArea, 2)} m² z ${fmt(sheetArea, 2)} m²</span></div>
+      <div class="kpi"><span class="l">Prořez</span><span class="v">${fmt(waste, 2)}<small>m²</small></span><span class="s">${fmt((1 - util) * 100, 1)} % plochy tabulí</span></div>
+      <div class="kpi"><span class="l">Dílů</span><span class="v">${fmt(nPieces)}</span><span class="s">${fmt(parsed.orders)} ${plural(parsed.orders, 'objednávka', 'objednávky', 'objednávek')}</span></div>
+    </section>`;
+
+    h += `<div class="bar2">
+      <p class="meta">Vyzkoušeno ${fmt(R.runs)} variant rozložení za ${fmt(R.ms / 1000, 1)} s. Tabule jsou seřazené od nejlépe využité.</p>
+      <div class="tools">
+        <button type="button" class="btn" id="copyPlan">Kopírovat plán pro Excel</button>
+        ${framed ? '' : '<button type="button" class="btn" id="csvPlan">Stáhnout CSV</button><button type="button" class="btn" id="printPlan">Tisk / PDF</button>'}
+        <span class="seg" role="group" aria-label="Velikost náhledů"><button type="button" data-view="s" aria-pressed="${settings.view !== 'l'}">Malé</button><button type="button" data-view="l" aria-pressed="${settings.view === 'l'}">Velké</button></span>
+      </div>
+    </div>
+    <div id="copyOut" hidden></div>
+    <div class="legend" aria-label="Legenda">
+      <span><svg viewBox="0 0 26 14"><rect class="lg-pc" x="1" y="1" width="24" height="12"/></svg>díl (objednávka, rozměr na stole)</span>
+      <span><svg viewBox="0 0 26 14"><rect class="lg-w" x="1" y="1" width="24" height="12"/></svg>prořez</span>
+      <span><svg viewBox="0 0 26 14"><path class="lg-cut" d="M1 7H25"/></svg>řez ve zbytku</span>
+      <span><svg viewBox="0 0 26 14"><rect class="lg-rem" x="2" y="2" width="22" height="10"/></svg>použitelný zbytek</span>
+      <span><svg viewBox="0 0 26 14"><rect class="lg-hi" x="1" y="1" width="24" height="12"/></svg>vybraná objednávka</span>
+    </div>`;
+
+    for (const g of groups) {
+      if (!g.sheets.length) continue;
+      const gA = g.sheets.length * A;
+      let gp = 0; for (const s of g.sheets) for (const it of s.items) gp += it.w * it.h;
+      gp /= 1e6;
+      h += `<section class="group" aria-label="${esc(g.label)}">`;
+      if (multi) h += `<header class="group-h"><h2>${esc(g.label)}</h2><span class="gs">${fmt(g.sheets.length)} ${plural(g.sheets.length, 'tabule', 'tabule', 'tabulí')} (min. ${fmt(g.ctx.lb)}) · využití ${fmt(gp / gA * 100, 1)} % · prořez ${fmt(gA - gp, 2)} m²</span></header>`;
+      h += `<div class="sheets">${g.sheets.map(sh => sheetCard(g, sh, cfg, multi)).join('')}</div></section>`;
+    }
+
+    // přehled objednávek
+    const orders = new Map();
+    for (const g of groups) for (const s of g.sheets) for (const it of s.items) {
+      const id = String(it.p.order);
+      let e = orders.get(id);
+      if (!e) { e = {id, types: new Set(), n: 0, area: 0, refs: []}; orders.set(id, e); }
+      e.types.add(g.label); e.n++; e.area += it.w * it.h;
+      const key = g.gid + '-s' + s.idx;
+      if (!e.refs.some(r => r.key === key)) e.refs.push({key, g, idx: s.idx});
+    }
+    const ord = [...orders.values()].sort((a, b) => collator.compare(a.id, b.id));
+    h += `<section class="orders" aria-labelledby="h-orders">
+      <div class="orders-h"><h2 id="h-orders">Objednávky</h2><input type="search" class="search" id="orderFilter" placeholder="Hledat objednávku…" aria-label="Hledat objednávku"></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Objednávka</th>${multi ? '<th>Typ skla</th>' : ''}<th class="num">Dílů</th><th class="num">Plocha m²</th><th>Na tabulích</th></tr></thead><tbody>
+      ${ord.map(e => {
+        const refs = e.refs.sort((a, b) => a.g.gid.localeCompare(b.g.gid) || a.idx - b.idx);
+        let rs = '', lastG = null;
+        for (const r of refs) {
+          if (multi && r.g !== lastG) { rs += `${lastG ? ' ' : ''}<span class="sref-g">${esc(r.g.label)}:</span>`; lastG = r.g; }
+          rs += `<button type="button" class="sref" data-target="${r.key}">${r.idx}</button>`;
+        }
+        return `<tr data-o="${esc(e.id)}" data-s="${esc(norm(e.id))}"><td class="id">${esc(e.id)}</td>${multi ? `<td>${esc([...e.types].join(', '))}</td>` : ''}<td class="num">${e.n}</td><td class="num">${fmt(e.area / 1e6, 2)}</td><td>${rs}</td></tr>`;
+      }).join('')}
+      </tbody></table></div></section>`;
+
+    els.body.innerHTML = h;
+    pinned = ''; setHL('');
+  }
+
+  /* ---------- Zvýraznění objednávky ---------- */
+  function setHL(o) {
+    els.hl.textContent = o ? `.pc[data-o="${cssStr(o)}"]>rect{fill:var(--hi);stroke:var(--hi-edge);stroke-width:2}` : '';
+  }
+  function pin(o, scroll) {
+    pinned = pinned === o ? '' : o;
+    setHL(pinned);
+    els.body.querySelectorAll('tbody tr.pin').forEach(tr => tr.classList.remove('pin'));
+    if (pinned) {
+      const tr = els.body.querySelector(`tbody tr[data-o="${cssStr(pinned)}"]`);
+      if (tr) tr.classList.add('pin');
+      if (scroll) {
+        const pc = els.body.querySelector(`.pc[data-o="${cssStr(pinned)}"]`);
+        const card = pc && pc.closest('.sheet');
+        if (card) scrollToCard(card);
+      }
+    }
+  }
+  function scrollToCard(card) {
+    card.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center'});
+    card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash');
+  }
+
+  /* ---------- Export ---------- */
+  function planRows(R) {
+    const rows = [['Typ skla', 'Tabule', 'Objednávka', 'Šířka (mm)', 'Výška (mm)', 'Otočeno', 'X (mm)', 'Y (mm)', 'Poznámka']];
+    for (const g of R.groups) for (const s of g.sheets) for (const it of s.items)
+      rows.push([g.label, s.idx, it.p.order, it.p.w, it.p.h, it.rot ? 'ano' : 'ne', Math.round(it.x * 10) / 10, Math.round(it.y * 10) / 10, it.p.note || '']);
+    return rows;
+  }
+  function showCopyFallback(text, msg) {
+    const box = $('#copyOut');
+    if (!box) return;
+    box.hidden = false;
+    box.innerHTML = `<div class="notice warn" style="flex-direction:column;align-items:stretch"><b>${esc(msg)}</b><textarea class="copybox" id="copyText" readonly></textarea></div>`;
+    const ta = $('#copyText'); ta.value = text; ta.focus(); ta.select();
+  }
+  function copyText(text, okMsg, btn) {
+    const done = () => { const old = btn.textContent; btn.textContent = okMsg; setTimeout(() => { btn.textContent = old; }, 1800); };
+    try {
+      navigator.clipboard.writeText(text).then(done, () => showCopyFallback(text, 'Označeno – zkopírujte klávesami Ctrl + C (Cmd + C).'));
+    } catch (e) { showCopyFallback(text, 'Označeno – zkopírujte klávesami Ctrl + C (Cmd + C).'); }
+  }
+
+  /* ---------- Události ---------- */
+  Object.values(inp).forEach(el => el.addEventListener('change', onSettingsChange));
+  els.run.addEventListener('click', () => compute());
+  els.text.addEventListener('input', () => { isSample = false; fileName = ''; markStale(); });
+  els.text.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); compute(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target !== els.text) compute(); });
+  els.file.addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) loadFile(f); e.target.value = ''; });
+  ['dragenter', 'dragover'].forEach(ev => els.drop.addEventListener(ev, e => { e.preventDefault(); els.drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => els.drop.addEventListener(ev, () => els.drop.classList.remove('over')));
+  els.drop.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) loadFile(f); });
+  $('#sampleBtn').addEventListener('click', () => { els.text.value = sampleDemand(); isSample = true; fileName = ''; compute(); });
+  $('#clearBtn').addEventListener('click', () => { els.text.value = ''; isSample = false; fileName = ''; els.info.innerHTML = ''; markStale(); els.text.focus(); });
+  $('#tplBtn').addEventListener('click', e => copyText('Objednávka\tTyp skla\tŠířka\tVýška\tPočet\tPoznámka\n4101\tEI 30\t800\t600\t2\tdveře\n4102\tEI 60\t1200\t900\t1\t', 'Vzor zkopírován', e.currentTarget));
+
+  els.body.addEventListener('mouseover', e => { const pc = e.target.closest('.pc'); if (pc) setHL(pc.dataset.o); });
+  els.body.addEventListener('mouseout', e => { const pc = e.target.closest('.pc'); if (pc && !(e.relatedTarget && pc.contains(e.relatedTarget))) setHL(pinned); });
+  els.body.addEventListener('click', e => {
+    const sref = e.target.closest('.sref');
+    if (sref) { e.stopPropagation(); const card = document.getElementById(sref.dataset.target); const tr = sref.closest('tr'); if (tr && pinned !== tr.dataset.o) pin(tr.dataset.o, false); if (card) scrollToCard(card); return; }
+    const pc = e.target.closest('.pc'); if (pc) { pin(pc.dataset.o, false); return; }
+    const tr = e.target.closest('tbody tr'); if (tr) { pin(tr.dataset.o, true); return; }
+    const vb = e.target.closest('.seg button');
+    if (vb) {
+      settings.view = vb.dataset.view; saveSettings(settings); els.results.dataset.view = settings.view;
+      vb.parentElement.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === vb)));
+      return;
+    }
+    if (!lastResult) return;
+    if (e.target.id === 'copyPlan') copyText(planRows(lastResult).map(r => r.join('\t')).join('\n'), 'Zkopírováno ✓', e.target);
+    if (e.target.id === 'csvPlan') {
+      const csv = '\ufeff' + planRows(lastResult).map(r => r.map(v => /[;"\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v).replace('.', ',')).join(';')).join('\r\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));
+      a.download = `narezovy-plan-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }
+    if (e.target.id === 'printPlan') window.print();
+  });
+  els.body.addEventListener('input', e => {
+    if (e.target.id !== 'orderFilter') return;
+    const q = norm(e.target.value);
+    els.body.querySelectorAll('tbody tr').forEach(tr => { tr.hidden = !!q && !tr.dataset.s.includes(q); });
+  });
+
+  fillSettings();
+  els.text.value = sampleDemand(); isSample = true;
+  compute(1500);
+})();
+</script>
+
+</html>

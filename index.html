@@ -3,11 +3,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Řezání skla</title>
-<meta name="description" content="Nářezový plán protipožárních skleněných tabulí s minimálním prořezem">
+<meta name="description" content="Nářezový plán skleněných tabulí podle druhů skla – minimální prořez a řezání krok za krokem">
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=JetBrains+Mono:wght@400;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=JetBrains+Mono:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <script async src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
@@ -58,6 +58,7 @@ h1,h2,h3{font-family:var(--f-display);font-stretch:88%;line-height:1.1;margin:0;
 p{margin:0}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 .wrap{max-width:1640px;margin:0 auto;padding-inline:clamp(16px,3vw,36px);padding-block:18px 64px}
 .top{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;justify-content:space-between;padding-bottom:18px;margin-bottom:24px;border-bottom:1px solid var(--line)}
@@ -71,7 +72,7 @@ h1{font-size:clamp(28px,3.4vw,38px);font-weight:760;letter-spacing:-.01em}
 .spec{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 18px}
 .spec b{color:var(--ink);font-weight:600}
 
-.layout{display:grid;grid-template-columns:minmax(300px,370px) minmax(0,1fr);gap:clamp(20px,2.6vw,38px);align-items:start}
+.layout{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:clamp(20px,2.6vw,38px);align-items:start}
 @media (max-width:940px){.layout{grid-template-columns:minmax(0,1fr)}}
 .panel{display:flex;flex-direction:column;gap:14px;min-width:0}
 @media (min-width:941px){.panel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 14px);max-height:calc(100vh - 28px);overflow:auto;padding-right:4px;scrollbar-width:thin}}
@@ -90,19 +91,33 @@ textarea:focus{border-color:var(--accent);outline:none}
 .hint{font-size:13px;color:var(--ink-2);line-height:1.45}
 .hint b{color:var(--ink);font-weight:600}
 .row{display:flex;flex-wrap:wrap;gap:8px}
-.pinfo{display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+.pinfo{display:flex;flex-direction:column;gap:7px;font-size:13.5px}
 .pinfo:empty{display:none}
-.pinfo .ok{color:var(--ink)}
 .pinfo ul{margin:0;padding-left:18px;color:var(--warn);font-size:12.5px}
 .pinfo .err{color:var(--bad);font-weight:600}
 .pinfo .muted{color:var(--ink-2);font-size:12.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+
+.tlist{display:flex;flex-direction:column;gap:8px}
+.trow{display:grid;grid-template-columns:36px minmax(0,1fr) 88px 30px;gap:6px 8px;align-items:center;padding:8px 8px 8px 10px;border:1px solid var(--line);border-left:6px solid var(--tc);border-radius:8px;background:var(--bg)}
+.trow input[type="color"]{width:36px;height:34px;padding:2px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer}
+.trow .tname{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:7px 8px;font-size:14px;min-width:0;width:100%}
+.trow .tname:focus,.trow .tsz input:focus{border-color:var(--accent);outline:none}
+.trow .inp input{padding:7px 2px 7px 8px}
+.tsz{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2)}
+.tsz input{width:72px;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:5px 6px;font:13px var(--f-mono)}
+.tdel{border:0;background:none;font-size:20px;line-height:1;color:var(--ink-3);cursor:pointer;width:30px;height:30px;border-radius:6px}
+.tdel:hover{color:var(--bad);background:var(--bad-soft)}
+.tdel:disabled{visibility:hidden}
 
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field.wide{grid-column:1 / -1}
 .inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;background:var(--bg);overflow:hidden}
 .inp:focus-within{border-color:var(--accent)}
 .inp input{border:0;background:transparent;padding:8px 4px 8px 10px;width:100%;min-width:0;font-family:var(--f-mono);font-size:14px;font-variant-numeric:tabular-nums;outline:none}
 .inp span{padding:0 10px 0 2px;color:var(--ink-3);font-size:12px}
+.trow .inp{background:var(--surface)}
 select{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:8px 8px;font-size:14px}
 select:focus{border-color:var(--accent);outline:none}
 .check{display:flex;gap:10px;align-items:center;font-size:14.5px;cursor:pointer}
@@ -112,9 +127,15 @@ select:focus{border-color:var(--accent);outline:none}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);padding:6px 12px;font-weight:600;font-size:13.5px;cursor:pointer;transition:border-color .15s,color .15s}
 .btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:default}
 .btn-primary{width:100%;background:var(--accent);color:var(--accent-ink);border-color:var(--accent);padding:13px 16px;font-family:var(--f-display);font-stretch:95%;font-size:18px;font-weight:720}
 .btn-primary:hover{color:var(--accent-ink);filter:brightness(1.07)}
-.btn:disabled{opacity:.65;cursor:progress}
+.btn-primary:disabled{cursor:progress}
+.btn-go{background:var(--ink);color:var(--bg);border-color:var(--ink);font-family:var(--f-display);font-stretch:95%;font-size:15px;font-weight:720;padding:7px 14px}
+.btn-go:hover{color:var(--bg);filter:brightness(1.2)}
+.btn-quiet{border-color:transparent;background:transparent;color:var(--ink-2);text-decoration:underline;text-underline-offset:2px;padding-inline:4px}
+.btn-danger{background:var(--bad);border-color:var(--bad);color:var(--on-bad)}
+.btn-danger:hover{color:var(--on-bad);filter:brightness(1.08)}
 .prog{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink-2)}
 .bar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s linear}
@@ -137,6 +158,21 @@ select:focus{border-color:var(--accent);outline:none}
 .kpi .v small{font-size:.5em;font-weight:600;color:var(--ink-2);margin-left:3px}
 .kpi .s{font-size:13px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
 .chip{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--good-soft);color:var(--good);letter-spacing:.02em}
+.tchip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:2px 9px 2px 7px;border-radius:99px;background:color-mix(in srgb,var(--tc) 15%,var(--surface));color:var(--ink);border:1px solid color-mix(in srgb,var(--tc) 50%,transparent);white-space:nowrap}
+.tchip::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--tc);flex:none}
+.tchip b{font-family:var(--f-mono);font-weight:600}
+.tchip.unknown{border-style:dashed}
+
+.work{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.work-l{display:flex;flex-direction:column;gap:1px}
+.work-v{font-size:14px;color:var(--ink-2)}
+.work-v b{font-family:var(--f-display);font-size:26px;font-weight:760;font-stretch:88%;color:var(--ink);font-variant-numeric:tabular-nums}
+.wbar{flex:1 1 140px;min-width:120px;height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.wbar i{display:block;height:100%;background:var(--good);transition:width .2s}
+.work-o{font-size:13.5px;color:var(--ink-2)}
+.work-o b{color:var(--ink)}
+.work .chips{flex-basis:100%}
+.confirm{display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13.5px}
 
 .bar2{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
 .meta{font-size:13px;color:var(--ink-2)}
@@ -154,14 +190,19 @@ select:focus{border-color:var(--accent);outline:none}
 .lg-hi{fill:var(--hi);stroke:var(--hi-edge);stroke-width:1}
 
 .group{display:flex;flex-direction:column;gap:14px}
-.group-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;padding-bottom:8px;border-bottom:1px solid var(--line)}
-.group-h h2{font-size:26px;font-weight:760}
-.group-h .gs{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2)}
+.group-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 18px;padding:12px 18px;border-radius:12px;background:var(--tc);color:var(--tc-ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.group-h h2{font-size:clamp(24px,2.6vw,32px);font-weight:800;text-transform:uppercase;letter-spacing:.01em}
+.group-h .gthick{font-family:var(--f-display);font-stretch:88%;font-size:clamp(20px,2.2vw,26px);font-weight:780}
+.group-h .gs{font-family:var(--f-mono);font-size:12.5px;opacity:.92;margin-left:auto}
 .sheets{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:14px}
 .results[data-view="l"] .sheets{grid-template-columns:repeat(auto-fill,minmax(min(100%,720px),1fr))}
-.sheet{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 12px 10px;display:flex;flex-direction:column;gap:8px;scroll-margin-top:18px;min-width:0}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0 12px 10px;display:flex;flex-direction:column;gap:8px;scroll-margin-top:18px;min-width:0;overflow:hidden}
 .sheet.flash{animation:flash 1.2s ease-out}
 @keyframes flash{0%{box-shadow:0 0 0 3px var(--hi-edge)}100%{box-shadow:0 0 0 3px transparent}}
+.sh-band{margin:0 -12px;padding:8px 14px;background:var(--tc);color:var(--tc-ink);display:flex;align-items:baseline;justify-content:space-between;gap:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.sh-type{font-family:var(--f-display);font-stretch:86%;font-weight:800;font-size:22px;line-height:1.1;text-transform:uppercase;letter-spacing:.01em;min-width:0;overflow-wrap:anywhere}
+.sh-thick{font-family:var(--f-display);font-stretch:88%;font-weight:800;font-size:24px;line-height:1.1;white-space:nowrap}
+.sh-thick small{font-family:var(--f-body);font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;opacity:.85;margin-right:5px}
 .sh-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .sh-h h3{font-size:17px;font-weight:720}
 .sh-m{margin-left:auto;font-size:12.5px;color:var(--ink-2)}
@@ -169,17 +210,32 @@ select:focus{border-color:var(--accent);outline:none}
 .pill.good{background:var(--good-soft);color:var(--good)}
 .pill.warn{background:var(--warn-soft);color:var(--warn)}
 .sv{display:block;width:100%;height:auto;overflow:visible}
-.sh-f{font-size:12.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:2px 14px}
+.sh-f{font-size:12.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:space-between;align-items:center}
 .sh-f b{color:var(--ink);font-weight:600;font-family:var(--f-mono);font-size:12px}
+.sh-btns{display:flex;flex-wrap:wrap;gap:8px}
 .sh-d summary{cursor:pointer;font-size:12.5px;color:var(--accent);font-weight:600;width:max-content}
-.sh-d ol{margin:6px 0 0;padding-left:22px;font:12px/1.65 var(--f-mono);columns:2 190px;column-gap:18px;color:var(--ink-2)}
+.sh-d ol{margin:6px 0 0;padding-left:32px;font:12px/1.65 var(--f-mono);color:var(--ink-2)}
+.sh-d ol.cols{columns:2 190px;column-gap:18px}
 .sh-d li b{color:var(--ink);font-weight:600}
+.sh-d .muted{color:var(--ink-3)}
+.sh-ds{display:flex;flex-wrap:wrap;gap:4px 18px}
+.results[data-filter="todo"] .sheet.done,.results[data-filter="done"] .sheet:not(.done){display:none}
+.sheet.done{border-color:var(--good);box-shadow:inset 0 0 0 1px var(--good)}
+.sheet.done .sv{opacity:.38;filter:grayscale(.7)}
+.cutbtn{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 12px 6px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-weight:700;font-size:13.5px;cursor:pointer;transition:border-color .15s,color .15s,background-color .15s}
+.cutbtn:hover{border-color:var(--good);color:var(--good)}
+.cutbtn .tick{width:18px;height:18px;flex:none;border:1.5px solid currentColor;border-radius:4px;display:inline-grid;place-items:center;font-size:13px;line-height:1}
+.cutbtn[aria-pressed="true"]{background:var(--good);border-color:var(--good);color:var(--on-good)}
+.cutbtn[aria-pressed="true"]:hover{color:var(--on-good);filter:brightness(1.08)}
+.cutbtn small{font-weight:400;font-size:12px;opacity:.85}
+.stepbtn{min-height:36px}
 
 .hatch-bg{fill:var(--waste-bg)}
 .hatch-ln{stroke:var(--waste-line)}
 .s-waste{fill:url(#hatch)}
 .s-trim{fill:var(--trim)}
-.s-edge{fill:none;stroke:var(--ink-3);stroke-width:1.2;vector-effect:non-scaling-stroke}
+.s-trim.cur{fill:var(--hi)}
+.s-edge{fill:none;stroke:var(--tc,var(--ink-3));stroke-width:3;vector-effect:non-scaling-stroke}
 .s-cut{fill:none;stroke:var(--cut);stroke-width:1;stroke-dasharray:5 4;vector-effect:non-scaling-stroke;opacity:.85}
 .s-rem{fill:none;stroke:var(--remnant);stroke-width:1.5;stroke-dasharray:7 4;vector-effect:non-scaling-stroke}
 .s-remtxt{fill:var(--remnant);font-family:var(--f-mono);font-weight:600}
@@ -188,6 +244,19 @@ select:focus{border-color:var(--accent);outline:none}
 .pc text{fill:var(--glass-text);font-family:var(--f-body);font-weight:700;pointer-events:none}
 .pc text .d{font-family:var(--f-mono);font-weight:400}
 .pc:hover rect{stroke-width:2}
+.pc.freed rect{fill:var(--good-soft);stroke:var(--good);stroke-width:2}
+.cutno circle{fill:var(--surface);stroke:var(--cut);stroke-width:1.2;vector-effect:non-scaling-stroke}
+.cutno text{fill:var(--cut);font-family:var(--f-mono);font-weight:700}
+.cutno .n-cur circle{fill:var(--hi-edge);stroke:var(--hi-edge)}
+.cutno .n-cur text{fill:var(--surface)}
+.cutno .n-done{opacity:.4}
+.results[data-view="s"] .cutno{display:none}
+.c-done{fill:none;stroke:var(--ink-2);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.c-cur{fill:none;stroke:var(--hi-edge);stroke-width:5;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.c-next{fill:none;stroke:var(--cut);stroke-width:1;stroke-dasharray:5 4;opacity:.45;vector-effect:non-scaling-stroke}
+.c-reg{fill:color-mix(in srgb,var(--hi) 28%,transparent);stroke:var(--hi-edge);stroke-width:2;stroke-dasharray:8 5;vector-effect:non-scaling-stroke}
+.dim path{fill:none;stroke:var(--hi-edge);stroke-width:2;vector-effect:non-scaling-stroke}
+.dim text{fill:var(--hi-edge);font-family:var(--f-mono);font-weight:700;paint-order:stroke;stroke:var(--surface);stroke-width:9;stroke-linejoin:round}
 
 .orders{display:flex;flex-direction:column;gap:12px}
 .orders-h{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
@@ -205,39 +274,52 @@ tbody tr{cursor:pointer}
 tbody tr:hover td{background:var(--accent-soft)}
 tbody tr.pin td{background:var(--hi-soft)}
 .sref{border:0;background:none;color:var(--accent);font:600 12.5px var(--f-mono);padding:0 3px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
-.sref-g{color:var(--ink-3);font-size:12px;margin-right:2px}
-.copybox{width:100%;min-height:90px;font:12px var(--f-mono)}
-.work{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
-.work-l{display:flex;flex-direction:column;gap:1px}
-.work-v{font-size:14px;color:var(--ink-2)}
-.work-v b{font-family:var(--f-display);font-size:26px;font-weight:760;font-stretch:88%;color:var(--ink);font-variant-numeric:tabular-nums}
-.wbar{flex:1 1 140px;min-width:120px;height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
-.wbar i{display:block;height:100%;background:var(--good);transition:width .2s}
-.work-o{font-size:13.5px;color:var(--ink-2)}
-.work-o b{color:var(--ink)}
-.confirm{display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13.5px}
-.btn-quiet{border-color:transparent;background:transparent;color:var(--ink-2);text-decoration:underline;text-underline-offset:2px;padding-inline:4px}
-.btn-danger{background:var(--bad);border-color:var(--bad);color:var(--on-bad)}
-.btn-danger:hover{color:var(--on-bad);filter:brightness(1.08)}
-.results[data-filter="todo"] .sheet.done,.results[data-filter="done"] .sheet:not(.done){display:none}
-.sheet.done{border-color:var(--good);box-shadow:inset 0 0 0 1px var(--good)}
-.sheet.done .sv{opacity:.38;filter:grayscale(.7)}
-.sh-f{justify-content:space-between;align-items:center}
-.cutbtn{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 12px 6px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-weight:700;font-size:13.5px;cursor:pointer;transition:border-color .15s,color .15s,background-color .15s}
-.cutbtn:hover{border-color:var(--good);color:var(--good)}
-.cutbtn .tick{width:18px;height:18px;flex:none;border:1.5px solid currentColor;border-radius:4px;display:inline-grid;place-items:center;font-size:13px;line-height:1}
-.cutbtn[aria-pressed="true"]{background:var(--good);border-color:var(--good);color:var(--on-good)}
-.cutbtn[aria-pressed="true"]:hover{color:var(--on-good);filter:brightness(1.08)}
-.cutbtn small{font-weight:400;font-size:12px;opacity:.85}
 .st-done{color:var(--good);font-weight:700}
 .st-part{color:var(--warn);font-weight:600}
 .st-wait{color:var(--ink-3)}
+.copybox{width:100%;min-height:90px;font:12px var(--f-mono)}
 
-@media (max-width:520px){.fields{grid-template-columns:1fr 1fr}.kpi{padding:12px 14px}}
+/* Řezání krok za krokem */
+html.shop-open,html.shop-open body{overflow:hidden}
+.shop{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)}
+.shop-top{background:var(--tc);color:var(--tc-ink);display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;padding:calc(env(safe-area-inset-top,0px) + 12px) clamp(16px,3vw,28px) 12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.st-id{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.st-type{font-family:var(--f-display);font-stretch:86%;font-size:clamp(28px,4.2vw,44px);font-weight:800;text-transform:uppercase;line-height:1}
+.st-thick{font-family:var(--f-display);font-stretch:88%;font-size:clamp(24px,3.4vw,36px);font-weight:800;line-height:1;white-space:nowrap}
+.st-thick small{font-family:var(--f-body);font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;opacity:.85;margin-right:6px}
+.st-sheet{font-size:15px;font-weight:600}
+.st-right{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.st-right select{width:auto;max-width:260px;background:var(--surface);color:var(--ink);border-color:transparent}
+.shop-close{border:1.5px solid currentColor;background:transparent;color:inherit;border-radius:8px;padding:7px 12px;font-weight:700;cursor:pointer}
+.shop-main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,390px);gap:20px 28px;padding:18px clamp(16px,3vw,28px)}
+@media (max-width:860px){.shop-main{grid-template-columns:minmax(0,1fr);overflow:auto;align-content:start}}
+.shop-fig{min-height:0;display:flex;align-items:center;justify-content:center}
+.shop-fig .sv{width:100%;height:auto;max-height:calc(100vh - 190px)}
+.shop-side{display:flex;flex-direction:column;gap:14px;min-height:0;overflow:auto}
+.shop-count{font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:var(--ink-2)}
+.shop-instr{font-family:var(--f-display);font-stretch:92%;font-size:clamp(24px,2.4vw,32px);font-weight:760;line-height:1.15;text-wrap:balance}
+.shop-instr b{color:var(--hi-edge);white-space:nowrap}
+.shop-sub{font-size:15.5px;color:var(--ink-2)}
+.shop-sub b{color:var(--ink)}
+.shop-freed{background:var(--good-soft);border:1px solid color-mix(in srgb,var(--good) 40%,transparent);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;font-size:15px}
+.shop-freed .lbl{color:var(--good)}
+.shop-freed b{font-size:17px}
+.shop-note{font-size:13.5px;color:var(--warn);font-weight:600}
+.shop-nav{display:flex;gap:10px;flex-wrap:wrap}
+.shop-nav .btn{min-height:54px;font-size:16px;padding-inline:16px}
+.shop-nav .shop-next{flex:1 1 200px;background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-family:var(--f-display);font-stretch:95%;font-size:19px;font-weight:760}
+.shop-nav .shop-next:hover{color:var(--accent-ink);filter:brightness(1.07)}
+.shop-list{margin:0;padding-left:36px;font:13px/1.7 var(--f-mono);color:var(--ink-2)}
+.shop-list li.done{color:var(--ink-3);text-decoration:line-through}
+.shop-list li.cur{color:var(--ink);font-weight:700}
+.shop-list li.cur::marker{color:var(--hi-edge)}
+.shop-keys{font-size:12px;color:var(--ink-3)}
+
+@media (max-width:520px){.kpi{padding:12px 14px}.sh-type,.sh-thick{font-size:19px}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 @media print{
   body{background:#fff}
-  .panel,.tools,.legend,.orders,.noprint,#resNotice,.work,.cutbtn{display:none!important}
+  .panel,.tools,.legend,.orders,.noprint,#resNotice,.work,.sh-btns,.shop{display:none!important}
   .layout{display:block}
   .wrap{max-width:none;padding:0}
   .sheets{grid-template-columns:1fr 1fr!important}
@@ -271,7 +353,7 @@ tbody tr.pin td{background:var(--hi-soft)}
         <path class="ic-cut" d="M28 0V31M28 16H46"/>
       </svg>
       <div>
-        <p class="eyebrow">Protipožární sklo · nářezový plán</p>
+        <p class="eyebrow">Nářezový plán skleněných tabulí</p>
         <h1>Řezání skla</h1>
       </div>
     </div>
@@ -289,7 +371,7 @@ tbody tr.pin td{background:var(--hi-soft)}
         </label>
         <label class="lbl" for="demandText">…nebo vložte řádky z Excelu</label>
         <textarea id="demandText" spellcheck="false" autocomplete="off" wrap="off"></textarea>
-        <p class="hint">Jeden řádek = jedna pozice. Sloupce poznám podle záhlaví: <b>Objednávka, Šířka, Výška, Počet</b>, nepovinně <b>Typ skla</b> a <b>Poznámka</b>. Rozměry v mm. Různé typy skla se řežou z různých tabulí.</p>
+        <p class="hint">Jeden řádek = jedna pozice. Sloupce: <b>Objednávka, Druh skla, Šířka, Výška, Počet</b>, nepovinně <b>Tloušťka</b> a <b>Poznámka</b>. Rozměry v mm. Druh stačí zkráceně: „4 mm“, „5“, „4 samočisticí“, „nightflame“.</p>
         <div class="row">
           <button type="button" class="btn" id="tplBtn">Zkopírovat vzor</button>
           <button type="button" class="btn" id="sampleBtn">Ukázková data</button>
@@ -298,20 +380,28 @@ tbody tr.pin td{background:var(--hi-soft)}
         <div class="pinfo" id="parseInfo" aria-live="polite"></div>
       </section>
 
+      <section class="box" aria-labelledby="h-types">
+        <h2 id="h-types">Druhy skla</h2>
+        <div class="tlist" id="typeList"></div>
+        <div class="row"><button type="button" class="btn" id="addType">+ Přidat druh skla</button></div>
+        <div class="field"><label class="lbl" for="defType">Když druh v poptávce chybí, použít</label><select id="defType"></select></div>
+        <p class="hint">Každý druh se řeže z vlastních tabulí a má svou barvu, podle které ho na plánu poznáte na první pohled.</p>
+        <p class="serr" id="typeErr" role="alert"></p>
+      </section>
+
       <section class="box" aria-labelledby="h-set">
         <h2 id="h-set">Nastavení</h2>
         <div class="fields">
-          <div class="field"><label class="lbl" for="setW">Šířka tabule</label><div class="inp"><input id="setW" type="number" inputmode="numeric" min="100" max="10000" step="1"><span>mm</span></div></div>
-          <div class="field"><label class="lbl" for="setH">Výška tabule</label><div class="inp"><input id="setH" type="number" inputmode="numeric" min="100" max="10000" step="1"><span>mm</span></div></div>
           <div class="field"><label class="lbl" for="setKerf">Šířka řezu</label><div class="inp"><input id="setKerf" type="number" inputmode="decimal" min="0" max="20" step="0.5"><span>mm</span></div></div>
           <div class="field"><label class="lbl" for="setTrim">Okrajový ořez</label><div class="inp"><input id="setTrim" type="number" inputmode="numeric" min="0" max="200" step="1"><span>mm</span></div></div>
+          <div class="field"><label class="lbl" for="setMinStrip">Nejužší odlomek</label><div class="inp"><input id="setMinStrip" type="number" inputmode="numeric" min="0" max="100" step="1"><span>mm</span></div></div>
           <div class="field"><label class="lbl" for="setUnit">Jednotky v poptávce</label>
             <select id="setUnit"><option value="auto">Rozpoznat</option><option value="mm">mm</option><option value="cm">cm</option><option value="m">m</option></select></div>
-          <div class="field"><label class="lbl" for="setEffort">Důkladnost</label>
+          <div class="field wide"><label class="lbl" for="setEffort">Důkladnost</label>
             <select id="setEffort"><option value="fast">Rychlá (~1 s)</option><option value="std">Standardní (~4 s)</option><option value="deep">Důkladná (~15 s)</option></select></div>
         </div>
         <label class="check" for="setRotate"><input type="checkbox" id="setRotate"> Díly lze otáčet o 90°</label>
-        <p class="hint">Řezy jsou gilotinové – každý vede přes celý kus skla, jak to vyžaduje lámání tabule. <b>Šířka řezu</b> je ztráta na každém řezu, <b>okrajový ořez</b> se odřízne ze všech čtyř hran tabule.</p>
+        <p class="hint">Řezy jsou gilotinové – každý vede přes celý kus skla, jak to vyžaduje lámání tabule. <b>Šířka řezu</b> je ztráta na každém řezu, <b>okrajový ořez</b> se odřízne ze všech čtyř hran tabule. Užší proužek než <b>nejužší odlomek</b> nejde odlomit, takže ho plán nevytvoří (0 = bez omezení).</p>
         <p class="serr" id="setErr" role="alert"></p>
       </section>
 
@@ -331,12 +421,14 @@ tbody tr.pin td{background:var(--hi-soft)}
   </div>
 </div>
 
+<div class="shop" id="shop" hidden role="dialog" aria-modal="true" aria-label="Řezání krok za krokem"></div>
+
 <script>
 'use strict';
-// @pure-start ==================================================================
 const collator = new Intl.Collator('cs', {numeric: true, sensitivity: 'base'});
 const norm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
 
+/* ---------- Čtení poptávky ---------- */
 function toNum(v) {
   if (typeof v === 'number') return Number.isFinite(v) ? v : NaN;
   let s = String(v == null ? '' : v).replace(/[\s\u00a0\u202f]/g, '');
@@ -377,11 +469,12 @@ const ROLE_RE = [
   ['w', /sirk|width|^(w|s|b|x)( |\(|$)/],
   ['h', /vysk|height|delk|length|^(h|v|l|y)( |\(|$)/],
   ['q', /poc|^ks|kus|mnoz|qty|quant|count|pcs|^n( |$)/],
+  ['thick', /tlous|^tl( |\.|$)|sila|thick/],
   ['type', /typ|skl|druh|mater|type|odoln|trid/],
   ['note', /pozn|note|popis|zakaznik|customer|stavb|akce|misto/],
   ['order', /obj|zak|order|cisl|^c\.|^c( |$)|^id|poz|ref|kod|^#/],
 ];
-const ROLE_NAME = {order: 'objednávka', type: 'typ skla', w: 'šířka', h: 'výška', q: 'počet', note: 'poznámka'};
+const ROLE_NAME = {order: 'objednávka', type: 'druh skla', thick: 'tloušťka', w: 'šířka', h: 'výška', q: 'počet', note: 'poznámka'};
 
 function headerMap(cells) {
   const map = {}; let hits = 0, numeric = 0;
@@ -408,7 +501,7 @@ function positionalMap(rows, base) {
   }
   const m = Object.assign({}, base || {});
   const used = () => new Set(Object.values(m));
-  let nums = numCols.filter(i => !used().has(i));
+  const nums = numCols.filter(i => !used().has(i));
   if (m.order == null && textCols.length && textCols[0] < (nums[0] == null ? Infinity : nums[0])) m.order = textCols[0];
   if (m.order == null && nums.length >= 4) m.order = nums.shift();
   if (m.w == null) m.w = nums.shift();
@@ -418,7 +511,7 @@ function positionalMap(rows, base) {
     for (const i of textCols) {
       if (used().has(i)) continue;
       const vals = sample.map(r => r.c[i]).filter(v => !blank(v));
-      if (vals.length && vals.filter(v => /^(ei|ew|el|e)\s?\d{2,3}/i.test(String(v).trim())).length >= vals.length * 0.6) { m.type = i; break; }
+      if (vals.length && vals.filter(v => /(^|\s)\d+([.,]\d+)?\s?mm\b|samoc|night|float|kalen|keram|^(ei|ew)\s?\d/i.test(norm(v))).length >= vals.length * 0.6) { m.type = i; break; }
     }
   }
   if (m.note == null) { const t = textCols.find(i => !used().has(i)); if (t != null) m.note = t; }
@@ -426,7 +519,7 @@ function positionalMap(rows, base) {
 }
 
 function parseDemand(text, unitSel) {
-  const res = {rows: [], pieces: [], warnings: [], error: '', unit: 'mm', unitAuto: false, map: null, orders: 0, types: []};
+  const res = {rows: [], pieces: [], warnings: [], error: '', unit: 'mm', unitAuto: false, map: null, orders: 0};
   const lines = [];
   String(text || '').split(/\r?\n/).forEach((l, i) => { if (l.trim()) lines.push({l, n: i + 1}); });
   if (!lines.length) { res.error = 'Poptávka je prázdná – nahrajte soubor nebo vložte řádky z Excelu.'; return res; }
@@ -436,7 +529,7 @@ function parseDemand(text, unitSel) {
   if (map) start = 1;
   if (!map || map.w == null || map.h == null) map = positionalMap(rows.slice(start), map);
   res.map = map;
-  if (map.w == null || map.h == null) { res.error = 'Nenašel jsem sloupce se šířkou a výškou. Přidejte záhlaví (Objednávka, Šířka, Výška, Počet).'; return res; }
+  if (map.w == null || map.h == null) { res.error = 'Nenašel jsem sloupce se šířkou a výškou. Přidejte záhlaví (Objednávka, Druh skla, Šířka, Výška, Počet).'; return res; }
 
   const raw = [];
   for (const r of rows.slice(start)) {
@@ -453,7 +546,11 @@ function parseDemand(text, unitSel) {
       if (q > 2000) { res.warnings.push(`Řádek ${r.n}: počet ${q} ks omezen na 2000`); q = 2000; }
     }
     const order = map.order != null && !blank(c[map.order]) ? String(c[map.order]).trim() : `ř. ${r.n}`;
-    const type = map.type != null && !blank(c[map.type]) ? String(c[map.type]).trim() : '';
+    let type = map.type != null && !blank(c[map.type]) ? String(c[map.type]).trim() : '';
+    if (map.thick != null && !blank(c[map.thick])) {
+      const tv = String(c[map.thick]).trim();
+      type = (type + ' ' + (isNum(tv) && !/mm/i.test(tv) ? tv + ' mm' : tv)).trim();
+    }
     const note = map.note != null && !blank(c[map.note]) ? String(c[map.note]).trim() : '';
     raw.push({order, type, w, h, q, note, n: r.n});
   }
@@ -467,14 +564,46 @@ function parseDemand(text, unitSel) {
   }
   res.unit = unit;
   const f = unit === 'm' ? 1000 : unit === 'cm' ? 10 : 1;
-  const orders = new Set(), types = new Set();
+  const orders = new Set();
   for (const r of raw) {
     r.w = Math.round(r.w * f); r.h = Math.round(r.h * f);
-    orders.add(r.order); types.add(r.type);
+    orders.add(r.order);
     for (let i = 0; i < r.q; i++) res.pieces.push({order: r.order, type: r.type, w: r.w, h: r.h, note: r.note, line: r.n});
   }
-  res.rows = raw; res.orders = orders.size; res.types = [...types].sort(collator.compare);
+  res.rows = raw; res.orders = orders.size;
   return res;
+}
+
+/* ---------- Druhy skla ---------- */
+function typeLabel(t) {
+  const th = t.thick ? `${String(t.thick).replace('.', ',')} mm` : '';
+  if (!t.name) return th || 'Sklo';
+  const hasTh = t.thick && new RegExp('(^|[^0-9])' + String(t.thick).replace('.', '[.,]') + '\\s?mm', 'i').test(t.name);
+  return th && !hasTh ? `${t.name} ${th}` : t.name;
+}
+function typeKeywords(t) {
+  return norm(t.name).split(/[^a-z0-9]+/).filter(w => w && !/^\d+$/.test(w) && !['mm', 'sklo', 'skla', 'tl'].includes(w));
+}
+// Přiřadí zápis z poptávky („4“, „4 mm samočisticí“, „nightflame“ …) k druhu skla z nastavení.
+function matchType(raw, types) {
+  const s = norm(raw);
+  if (!s) return null;
+  const compact = s.replace(/[^a-z0-9]/g, '');
+  const nums = (s.match(/\d+([.,]\d+)?/g) || []).map(x => parseFloat(x.replace(',', '.')));
+  let best = null, bestScore = 0;
+  for (const t of types) {
+    let sc = 0;
+    const full = norm(typeLabel(t)).replace(/[^a-z0-9]/g, '');
+    if (full && compact === full) sc += 100;
+    const kws = typeKeywords(t);
+    let hit = 0;
+    for (const w of kws) if (compact.includes(w.slice(0, Math.min(6, w.length)))) hit++;
+    sc += hit * 10;
+    if (kws.length && !hit) sc -= 8;
+    if (t.thick && nums.length) sc += nums.includes(t.thick) ? 5 : -20;
+    if (sc > bestScore) { bestScore = sc; best = t; }
+  }
+  return best;
 }
 
 /* ---------- Optimalizace řezu (gilotinové řezy, více heuristik + náhodné restarty) ---------- */
@@ -494,6 +623,9 @@ const Engine = (() => {
   // Rozměry dílů i tabule se počítají „včetně řezu“: díl + k, tabule (bez okrajů) + k.
   function prepare(pieces, cfg) {
     const k = cfg.kerf, BW = cfg.W - 2 * cfg.trim + k, BH = cfg.H - 2 * cfg.trim + k;
+    // ms: nejužší proužek, který jde odlomit (v jednotkách „včetně řezu“); užší zbytek se nepřipouští
+    const ms = cfg.minStrip > 0 ? cfg.minStrip + k : 0;
+    const ok = (w, h) => w <= BW && h <= BH && (!ms || ((w === BW || BW - w >= ms) && (h === BH || BH - h >= ms)));
     const map = new Map(), unfit = [];
     for (const p of pieces) {
       let a = p.w, b = p.h;
@@ -502,7 +634,7 @@ const Engine = (() => {
       let t = map.get(key);
       if (!t) {
         const w = a + k, h = b + k, canRot = !!cfg.rotate && a !== b;
-        const fits = (w <= BW && h <= BH) || (canRot && h <= BW && w <= BH);
+        const fits = ok(w, h) || (canRot && ok(h, w));
         t = {w, h, a: w * h, ra: a * b, canRot, fits, list: []};
         map.set(key, t);
       }
@@ -522,7 +654,7 @@ const Engine = (() => {
       if ((!nFits || bigN) && (!rotFits || bigR)) big += t.n;
     }
     const lb = total ? Math.max(1, Math.ceil(area / (BW * BH) - 1e-9), big) : 0;
-    return {types, unfit, BW, BH, k, total, lb, minSide, cfg};
+    return {types, unfit, BW, BH, k, ms, total, lb, minSide, cfg};
   }
 
   function makeParams(ctx, rule, split, noise, rng) {
@@ -540,11 +672,11 @@ const Engine = (() => {
     return makeParams(ctx, RULES[Math.floor(rng() * RULES.length)], Math.floor(rng() * NSPLIT), 0.03 + rng() * 0.3, rng);
   }
 
-  const newSheet = ctx => ({free: [{x: 0, y: 0, w: ctx.BW, h: ctx.BH}], pl: [], cuts: [], used: 0});
-  const cloneSheet = s => ({free: s.free.map(f => ({x: f.x, y: f.y, w: f.w, h: f.h})), pl: s.pl.slice(), cuts: s.cuts.slice(), used: s.used});
+  const newSheet = ctx => ({free: [{x: 0, y: 0, w: ctx.BW, h: ctx.BH, id: 0}], pl: [], log: [], nid: 1, used: 0});
+  const cloneSheet = s => ({free: s.free.map(f => ({x: f.x, y: f.y, w: f.w, h: f.h, id: f.id})), pl: s.pl.slice(), log: s.log.slice(), nid: s.nid, used: s.used});
 
   function pick(ctx, s, cnt, P, rng) {
-    const T = ctx.types, F = s.free, rule = P.rule;
+    const T = ctx.types, F = s.free, rule = P.rule, ms = ctx.ms;
     if (rule[0] === 'L') {
       let fallback = null;
       for (let oi = 0; oi < P.order.length; oi++) {
@@ -558,6 +690,7 @@ const Engine = (() => {
             if (o === 1 && !t.canRot) break;
             const w = o ? t.h : t.w, h = o ? t.w : t.h;
             if (w > f.w || h > f.h) continue;
+            if (ms) { const dw = f.w - w, dh = f.h - h; if ((dw > 0 && dw < ms) || (dh > 0 && dh < ms)) continue; }
             let s1, s2;
             if (rule === 'LFBL') { s1 = f.y + h; s2 = f.x; }
             else if (rule === 'LFBAF') { s1 = f.w * f.h - w * h; s2 = Math.min(f.w - w, f.h - h); }
@@ -585,6 +718,7 @@ const Engine = (() => {
           const w = o ? t.h : t.w, h = o ? t.w : t.h;
           if (w > f.w || h > f.h) continue;
           const dw = f.w - w, dh = f.h - h;
+          if (ms && ((dw > 0 && dw < ms) || (dh > 0 && dh < ms))) continue;
           let s1, s2;
           switch (rule) {
             case 'BSSF': s1 = Math.min(dw, dh) * J; s2 = Math.max(dw, dh); break;
@@ -601,6 +735,7 @@ const Engine = (() => {
   }
 
   // Umístí díl do levého horního rohu volného obdélníku a zbytek rozdělí jedním gilotinovým řezem.
+  // Každé umístění se zapíše do deníku – z něj se pak skládá postup řezání.
   function place(s, m, split, minSide) {
     const f = s.free[m.f], w = m.w, h = m.h, dw = f.w - w, dh = f.h - h;
     s.pl.push({t: m.t, x: f.x, y: f.y, w, h});
@@ -617,18 +752,9 @@ const Engine = (() => {
     }
     const last = s.free.pop();
     if (m.f < s.free.length) s.free[m.f] = last;
-    let r1, r2;
-    if (H) {
-      if (dh > 0) s.cuts.push([f.x, f.y + h, f.x + f.w, f.y + h]);
-      if (dw > 0) s.cuts.push([f.x + w, f.y, f.x + w, f.y + h]);
-      r1 = {x: f.x + w, y: f.y, w: dw, h: h};
-      r2 = {x: f.x, y: f.y + h, w: f.w, h: dh};
-    } else {
-      if (dw > 0) s.cuts.push([f.x + w, f.y, f.x + w, f.y + f.h]);
-      if (dh > 0) s.cuts.push([f.x, f.y + h, f.x + w, f.y + h]);
-      r1 = {x: f.x + w, y: f.y, w: dw, h: f.h};
-      r2 = {x: f.x, y: f.y + h, w: w, h: dh};
-    }
+    const r1 = H ? {x: f.x + w, y: f.y, w: dw, h: h, id: s.nid++} : {x: f.x + w, y: f.y, w: dw, h: f.h, id: s.nid++};
+    const r2 = H ? {x: f.x, y: f.y + h, w: f.w, h: dh, id: s.nid++} : {x: f.x, y: f.y + h, w: w, h: dh, id: s.nid++};
+    s.log.push({f: f.id, x: f.x, y: f.y, w: f.w, h: f.h, pi: s.pl.length - 1, H, r1: r1.id, r2: r2.id});
     if (r1.w >= minSide && r1.h >= minSide) s.free.push(r1);
     if (r2.w >= minSide && r2.h >= minSide) s.free.push(r2);
   }
@@ -678,6 +804,7 @@ const Engine = (() => {
             const w = o ? t.h : t.w, h = o ? t.w : t.h;
             if (w > f.w || h > f.h) continue;
             const dw = f.w - w, dh = f.h - h, s1 = Math.min(dw, dh), s2 = Math.max(dw, dh);
+            if (ctx.ms && ((dw > 0 && dw < ctx.ms) || (dh > 0 && dh < ctx.ms))) continue;
             if (s1 < b1 || (s1 === b1 && s2 < b2)) { b1 = s1; b2 = s2; best = {t: pl.t, f: j, w, h}; bs = si; }
           }
         }
@@ -747,7 +874,6 @@ const Engine = (() => {
     let lastYield = t0, best = null, runs = 0, tried = 0;
     for (;;) {
       if (runs >= det.length && runs % 3 !== 0 && best.n > 1) {
-        // vylepšování nejlepšího řešení
         let cur = best.sheets, changed = false;
         for (let i = 0; i < 25; i++) {
           const next = lnsStep(ctx, cur, rng); tried += 3;
@@ -781,15 +907,65 @@ const Engine = (() => {
     return {sheets: best.sheets, runs: tried};
   }
 
+  // Postup řezání z deníku umístění: po každém řezu se nejdřív dořeže kus s dílem a pak se
+  // pokračuje zbytkem. Řezy jsou přesně ty, které optimalizace naplánovala (včetně nejužšího odlomku).
+  function cutSteps(s, order, ctx) {
+    const {trim} = ctx.cfg, k = ctx.k, eps = 1e-4;
+    const byF = new Map(s.log.map(e => [e.f, e]));
+    const raw = [];
+    (function rec(id) {
+      const e = byF.get(id);
+      if (!e) return;
+      const p = s.pl[e.pi], dw = e.w - p.w, dh = e.h - p.h;
+      if (e.H) {
+        if (dh > 0) raw.push({dir: 'h', c: e.y + p.h, R: {x: e.x, y: e.y, w: e.w, h: e.h}});
+        if (dw > 0) raw.push({dir: 'v', c: e.x + p.w, R: {x: e.x, y: e.y, w: e.w, h: p.h}});
+        rec(e.r1); rec(e.r2);
+      } else {
+        if (dw > 0) raw.push({dir: 'v', c: e.x + p.w, R: {x: e.x, y: e.y, w: e.w, h: e.h}});
+        if (dh > 0) raw.push({dir: 'h', c: e.y + p.h, R: {x: e.x, y: e.y, w: p.w, h: e.h}});
+        rec(e.r2); rec(e.r1);
+      }
+    })(0);
+    // Který díl je po kterém řezu volný: díl je hotový, když jsou přeříznuté všechny jeho strany uvnitř tabule.
+    const pcs = order.map(pl => ({x: pl.x, y: pl.y, w: pl.w, h: pl.h, l: pl.x > eps, t: pl.y > eps, r: pl.x + pl.w < ctx.BW - eps, b: pl.y + pl.h < ctx.BH - eps, done: false}));
+    const release = () => {
+      const out = [];
+      pcs.forEach((q, i) => { if (!q.done && !q.l && !q.t && !q.r && !q.b) { q.done = true; out.push(i); } });
+      return out;
+    };
+    const r1 = v => Math.round(v * 10) / 10;
+    const steps = [];
+    if (trim > 0) steps.push({trim, freed: release()});
+    for (const st of raw) {
+      const R = st.R, v = st.dir === 'v';
+      for (const q of pcs) {
+        if (v && q.y >= R.y - eps && q.y + q.h <= R.y + R.h + eps) { if (Math.abs(q.x + q.w - st.c) < eps) q.r = false; if (Math.abs(q.x - st.c) < eps) q.l = false; }
+        if (!v && q.x >= R.x - eps && q.x + q.w <= R.x + R.w + eps) { if (Math.abs(q.y + q.h - st.c) < eps) q.b = false; if (Math.abs(q.y - st.c) < eps) q.t = false; }
+      }
+      steps.push({
+        dir: st.dir,
+        pos: r1(trim + st.c - k / 2),
+        a: r1(trim + (v ? R.y : R.x)),
+        b: r1(trim + (v ? R.y + R.h : R.x + R.w) - k),
+        measure: r1(st.c - (v ? R.x : R.y) - k),
+        len: r1((v ? R.h : R.w) - k),
+        R: {x: r1(trim + R.x), y: r1(trim + R.y), w: r1(R.w - k), h: r1(R.h - k)},
+        freed: release(),
+      });
+    }
+    steps.forEach((x, j) => { x.n = j + 1; });
+    return steps;
+  }
+
   // Převod výsledku na skutečné souřadnice tabule (mm) a přiřazení konkrétních dílů objednávek.
   function materialize(ctx, sheets) {
-    const {W, H, trim} = ctx.cfg, k = ctx.k, BW = ctx.BW, BH = ctx.BH;
-    const X = v => v <= 0 ? trim : v >= BW ? W - trim : trim + v - k / 2;
-    const Y = v => v <= 0 ? trim : v >= BH ? H - trim : trim + v - k / 2;
+    const {W, H, trim} = ctx.cfg, k = ctx.k;
     const sorted = sheets.slice().sort((a, b) => b.used - a.used);
     const ptr = new Int32Array(ctx.types.length);
     return sorted.map((s, si) => {
-      const items = s.pl.slice().sort((a, b) => a.y - b.y || a.x - b.x).map(pl => {
+      const order = s.pl.slice().sort((a, b) => a.y - b.y || a.x - b.x);
+      const items = order.map(pl => {
         const t = ctx.types[pl.t], p = t.list[ptr[pl.t]++];
         const w = pl.w - k, h = pl.h - k;
         return {p, x: trim + pl.x, y: trim + pl.y, w, h, rot: w !== p.w};
@@ -799,9 +975,7 @@ const Engine = (() => {
         const w = f.w - k, h = f.h - k;
         if (w > 0 && h > 0 && (!rem || w * h > rem.w * rem.h)) rem = {x: trim + f.x, y: trim + f.y, w, h};
       }
-      const r1 = v => Math.round(v * 10) / 10;
-      const cuts = s.cuts.map(c => [r1(X(c[0])), r1(Y(c[1])), r1(X(c[2])), r1(Y(c[3]))]);
-      return {idx: si + 1, items, used: s.used, util: s.used / (W * H), rem, cuts, nCuts: s.cuts.length + (trim > 0 ? 4 : 0), W, H, trim};
+      return {idx: si + 1, items, used: s.used, util: s.used / (W * H), rem, W, H, trim, steps: cutSteps(s, order, ctx)};
     });
   }
 
@@ -811,24 +985,26 @@ const Engine = (() => {
 function sampleDemand() {
   const r = Engine.rng(4101);
   const rnd = (a, b) => Math.round((a + r() * (b - a)) / 5) * 5;
-  const notes = ['', '', '', '', 'dveře', 'nadsvětlík', 'boční světlík', 'příčka', 'průhled'];
-  const out = ['Objednávka\tTyp skla\tŠířka\tVýška\tPočet\tPoznámka'];
+  const notes = ['', '', '', '', 'dvířka', 'boční sklo', 'krbová vložka', 'kamna', 'průhled'];
+  const kinds = [['4 mm', 0.45], ['5 mm', 0.25], ['4 mm samočisticí', 0.2], ['Nightflame', 0.1]];
+  const out = ['Objednávka\tDruh skla\tŠířka\tVýška\tPočet\tPoznámka'];
   for (let i = 0; i < 200; i++) {
-    const id = String(4101 + i), type = r() < 0.62 ? 'EI 30' : 'EI 60';
+    const id = String(4101 + i);
+    let x = r(), kind = kinds[0][0];
+    for (const [k, p] of kinds) { if (x < p) { kind = k; break; } x -= p; }
     const npos = r() < 0.4 ? 2 : 1;
     for (let j = 0; j < npos; j++) {
       const c = r(); let w, h;
-      if (c < 0.55) { w = rnd(250, 700); h = rnd(300, 950); }
-      else if (c < 0.87) { w = rnd(450, 950); h = rnd(650, 1450); }
-      else { w = rnd(650, 960); h = rnd(1450, 1960); }
-      if (r() < 0.2) { const t = w; w = h; h = t; }
-      const q = r() < 0.7 ? 1 : r() < 0.85 ? 2 : 3;
-      out.push([id, type, w, h, q, notes[Math.floor(r() * notes.length)]].join('\t'));
+      if (c < 0.6) { w = rnd(250, 600); h = rnd(200, 550); }
+      else if (c < 0.92) { w = rnd(500, 900); h = rnd(400, 750); }
+      else { w = rnd(800, 1200); h = rnd(600, 950); }
+      if (r() < 0.25) { const t = w; w = h; h = t; }
+      const q = r() < 0.65 ? 1 : r() < 0.85 ? 2 : 3;
+      out.push([id, kind, w, h, q, notes[Math.floor(r() * notes.length)]].join('\t'));
     }
   }
   return out.join('\n');
 }
-// @pure-end ====================================================================
 
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
@@ -837,16 +1013,57 @@ function sampleDemand() {
   const mm = v => String(Math.round(v * 10) / 10).replace('.', ',');
   const plural = (n, a, b, c) => n === 1 ? a : (n >= 2 && n <= 4 ? b : c);
   const cssStr = s => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\n\r]/g, ' ');
+  const when = t => new Date(t).toLocaleString('cs-CZ', {day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'});
 
-  const DEFAULTS = {W: 2000, H: 1000, kerf: 2, trim: 0, rotate: true, unit: 'auto', effort: 'std', view: 's', filter: 'all'};
+  const PALETTE = ['#2F6DB5', '#9A6210', '#7B4DB8', '#B3263E', '#1F7F74', '#5B6770', '#A0507A', '#3F7F2A'];
+  const DEFAULT_TYPES = () => [
+    {id: 't4', name: '', thick: 4, W: 2000, H: 1000, color: PALETTE[0]},
+    {id: 't5', name: '', thick: 5, W: 2000, H: 1000, color: PALETTE[1]},
+    {id: 't4s', name: 'Samočisticí', thick: 4, W: 2000, H: 1000, color: PALETTE[2]},
+    {id: 'tnf', name: 'Nightflame', thick: 4, W: 2000, H: 1000, color: PALETTE[3]},
+  ];
+  const DEFAULTS = {kerf: 2, trim: 0, minStrip: 10, rotate: true, unit: 'auto', effort: 'std', view: 's', filter: 'all', defType: 't4'};
   const BUDGET = {fast: 1200, std: 4000, deep: 15000};
-  const LS_KEY = 'rezani-skla/nastaveni/v1';
+  const LS_KEY = 'rezani-skla/nastaveni/v2', LS_OLD = 'rezani-skla/nastaveni/v1';
+  const JOB_KEY = 'rezani-skla/plan/v2', JOB_OLD = 'rezani-skla/plan/v1';
   let framed = true;
   try { framed = window.self !== window.top; } catch (e) { framed = true; }
 
+  // Barva textu, která je čitelná na barvě druhu skla.
+  function inkOn(hex) {
+    const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
+    if (!m) return '#fff';
+    const n = parseInt(m[1], 16);
+    const [r, g, b] = [n >> 16 & 255, n >> 8 & 255, n & 255].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.179 ? '#111' : '#fff';
+  }
+  const tcStyle = t => `--tc:${t.color};--tc-ink:${inkOn(t.color)}`;
+  const thickTxt = t => t.thick ? `${mm(t.thick)} mm` : '—';
+  const nameTxt = t => t.name || 'Sklo';
+
+  const clampInt = (v, d) => { const n = Math.round(Number(v)); return n >= 100 && n <= 10000 ? n : d; };
+  function cleanType(t, i) {
+    return {
+      id: String(t.id || 't' + i), name: String(t.name || '').slice(0, 40),
+      thick: Number(t.thick) > 0 ? Math.round(Number(t.thick) * 10) / 10 : null,
+      W: clampInt(t.W, 2000), H: clampInt(t.H, 1000),
+      color: /^#[0-9a-f]{6}$/i.test(t.color) ? t.color : PALETTE[i % PALETTE.length],
+    };
+  }
   function loadSettings() {
-    try { const s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); return Object.assign({}, DEFAULTS, s || {}); }
-    catch (e) { return Object.assign({}, DEFAULTS); }
+    let s = null;
+    try { s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { s = null; }
+    if (!s) {
+      try {
+        const o = JSON.parse(localStorage.getItem(LS_OLD) || 'null');
+        if (o) { s = Object.assign({}, o); s.types = DEFAULT_TYPES().map(t => Object.assign(t, {W: o.W || 2000, H: o.H || 1000})); }
+      } catch (e) { s = null; }
+    }
+    s = Object.assign({}, DEFAULTS, s || {});
+    if (!Array.isArray(s.types) || !s.types.length) s.types = DEFAULT_TYPES();
+    s.types = s.types.map(cleanType);
+    delete s.W; delete s.H;
+    return s;
   }
   function saveSettings(s) { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch (e) { /* bez úložiště */ } }
   let settings = loadSettings();
@@ -855,34 +1072,37 @@ function sampleDemand() {
     file: $('#file'), drop: $('#drop'), text: $('#demandText'), info: $('#parseInfo'),
     run: $('#runBtn'), prog: $('#prog'), progBar: $('#progBar'), progText: $('#progText'),
     results: $('#results'), notice: $('#resNotice'), body: $('#resBody'), spec: $('#spec'), setErr: $('#setErr'),
-    hl: $('#hlStyle'),
+    hl: $('#hlStyle'), typeList: $('#typeList'), typeErr: $('#typeErr'), defType: $('#defType'), shop: $('#shop'),
   };
-  const inp = {W: $('#setW'), H: $('#setH'), kerf: $('#setKerf'), trim: $('#setTrim'), rotate: $('#setRotate'), unit: $('#setUnit'), effort: $('#setEffort')};
+  const inp = {kerf: $('#setKerf'), trim: $('#setTrim'), minStrip: $('#setMinStrip'), rotate: $('#setRotate'), unit: $('#setUnit'), effort: $('#setEffort')};
 
   let isSample = false, fileName = '', lastResult = null, runSeq = 0, pinned = '';
 
+  /* ---------- Nastavení a druhy skla ---------- */
   function fillSettings() {
-    inp.W.value = settings.W; inp.H.value = settings.H; inp.kerf.value = settings.kerf; inp.trim.value = settings.trim;
+    inp.kerf.value = settings.kerf; inp.trim.value = settings.trim; inp.minStrip.value = settings.minStrip;
     inp.rotate.checked = !!settings.rotate; inp.unit.value = settings.unit; inp.effort.value = settings.effort;
     els.results.dataset.view = settings.view;
     els.results.dataset.filter = settings.filter;
+    renderTypeEditor();
     renderSpec();
   }
   function readSettings() {
     const n = el => Number(String(el.value).replace(',', '.'));
     const s = Object.assign({}, settings, {
-      W: Math.round(n(inp.W)), H: Math.round(n(inp.H)), kerf: n(inp.kerf), trim: Math.round(n(inp.trim)),
+      kerf: n(inp.kerf), trim: Math.round(n(inp.trim)), minStrip: Math.round(n(inp.minStrip)),
       rotate: inp.rotate.checked, unit: inp.unit.value, effort: inp.effort.value,
     });
     let err = '';
-    if (!(s.W >= 100 && s.W <= 10000) || !(s.H >= 100 && s.H <= 10000)) err = 'Rozměr tabule musí být mezi 100 a 10 000 mm.';
-    else if (!(s.kerf >= 0 && s.kerf <= 20)) err = 'Šířka řezu musí být 0–20 mm.';
-    else if (!(s.trim >= 0) || s.trim * 2 >= Math.min(s.W, s.H) - 50) err = 'Okrajový ořez je větší, než tabule dovolí.';
+    const minSide = Math.min(...s.types.map(t => Math.min(t.W, t.H)));
+    if (!(s.kerf >= 0 && s.kerf <= 20)) err = 'Šířka řezu musí být 0–20 mm.';
+    else if (!(s.minStrip >= 0 && s.minStrip <= 100)) err = 'Nejužší odlomek musí být 0–100 mm.';
+    else if (!(s.trim >= 0) || s.trim * 2 >= minSide - 50) err = 'Okrajový ořez je větší, než nejmenší tabule dovolí.';
     return {s, err};
   }
   function renderSpec() {
-    const s = settings;
-    els.spec.innerHTML = `<span>Tabule <b>${fmt(s.W)} × ${fmt(s.H)}</b> mm</span><span>řez <b>${mm(s.kerf)}</b> mm</span><span>okraj <b>${fmt(s.trim)}</b> mm</span><span>otáčení <b>${s.rotate ? 'ano' : 'ne'}</b></span>`;
+    const s = settings, n = s.types.length;
+    els.spec.innerHTML = `<span><b>${n}</b> ${plural(n, 'druh', 'druhy', 'druhů')} skla</span><span>řez <b>${mm(s.kerf)}</b> mm</span><span>okraj <b>${fmt(s.trim)}</b> mm</span><span>odlomek <b>${s.minStrip ? '≥ ' + fmt(s.minStrip) : 'bez omezení'}</b>${s.minStrip ? ' mm' : ''}</span><span>otáčení <b>${s.rotate ? 'ano' : 'ne'}</b></span>`;
   }
   function onSettingsChange() {
     const {s, err} = readSettings();
@@ -890,6 +1110,47 @@ function sampleDemand() {
     if (err) return;
     settings = s; saveSettings(settings); renderSpec(); markStale();
   }
+
+  function renderTypeEditor() {
+    const one = settings.types.length <= 1;
+    els.typeList.innerHTML = settings.types.map(t => `
+      <div class="trow" data-id="${esc(t.id)}" style="${tcStyle(t)}">
+        <input type="color" id="tc-${esc(t.id)}" value="${t.color}" aria-label="Barva druhu ${esc(typeLabel(t))}">
+        <input class="tname" id="tn-${esc(t.id)}" value="${esc(t.name)}" placeholder="název (nepovinný)" maxlength="40" aria-label="Název druhu">
+        <div class="inp"><input id="tt-${esc(t.id)}" type="number" inputmode="decimal" min="1" max="50" step="0.1" value="${t.thick == null ? '' : t.thick}" aria-label="Tloušťka"><span>mm</span></div>
+        <button type="button" class="tdel" data-del="${esc(t.id)}" aria-label="Odebrat druh ${esc(typeLabel(t))}"${one ? ' disabled' : ''}>×</button>
+        <div class="tsz"><span>tabule</span><input id="tw-${esc(t.id)}" type="number" inputmode="numeric" min="100" max="10000" value="${t.W}" aria-label="Šířka tabule"><span>×</span><input id="th-${esc(t.id)}" type="number" inputmode="numeric" min="100" max="10000" value="${t.H}" aria-label="Výška tabule"><span>mm</span></div>
+      </div>`).join('');
+    els.defType.innerHTML = settings.types.map(t => `<option value="${esc(t.id)}"${t.id === settings.defType ? ' selected' : ''}>${esc(typeLabel(t))}</option>`).join('');
+    if (!settings.types.some(t => t.id === settings.defType)) { settings.defType = settings.types[0].id; els.defType.value = settings.defType; }
+  }
+  function readTypes() {
+    let err = '';
+    const types = [...els.typeList.querySelectorAll('.trow')].map((row, i) => {
+      const id = row.dataset.id, g = p => row.querySelector(`#${p}-${CSS.escape(id)}`);
+      const W = Math.round(Number(g('tw').value)), H = Math.round(Number(g('th').value));
+      const th = String(g('tt').value).replace(',', '.').trim();
+      if (!(W >= 100 && W <= 10000 && H >= 100 && H <= 10000)) err = 'Rozměr tabule musí být mezi 100 a 10 000 mm.';
+      if (th && !(Number(th) > 0 && Number(th) <= 50)) err = 'Tloušťka musí být 0–50 mm.';
+      return cleanType({id, name: g('tn').value.trim(), thick: th ? Number(th) : null, W, H, color: g('tc').value}, i);
+    });
+    return {types, err};
+  }
+  function onTypesChange() {
+    const {types, err} = readTypes();
+    els.typeErr.textContent = err;
+    if (err) return;
+    settings.types = types;
+    els.typeList.querySelectorAll('.trow').forEach((row, i) => row.setAttribute('style', tcStyle(types[i])));
+    const dv = els.defType.value;
+    els.defType.innerHTML = types.map(t => `<option value="${esc(t.id)}"${t.id === dv ? ' selected' : ''}>${esc(typeLabel(t))}</option>`).join('');
+    saveSettings(settings); renderSpec(); refreshParseInfo(); markStale();
+  }
+  function refreshParseInfo() {
+    const parsed = parseDemand(els.text.value, settings.unit);
+    renderParseInfo(parsed, parsed.error ? null : resolveTypes(parsed));
+  }
+
   function markStale() {
     if (!lastResult) return;
     els.results.classList.add('stale');
@@ -899,16 +1160,42 @@ function sampleDemand() {
   }
 
   /* ---------- Poptávka ---------- */
-  function renderParseInfo(parsed) {
-    if (parsed.error) { els.info.innerHTML = `<p class="err">${esc(parsed.error)}</p>`; return; }
-    const n = parsed.pieces.length, o = parsed.orders, t = parsed.types.filter(Boolean).length;
-    const cols = ['order', 'type', 'w', 'h', 'q', 'note'].filter(r => parsed.map[r] != null).map(r => ROLE_NAME[r]);
-    let h = `<p class="ok">${fileName ? `<b>${esc(fileName)}</b> · ` : ''}<b>${fmt(o)}</b> ${plural(o, 'objednávka', 'objednávky', 'objednávek')} · <b>${fmt(n)}</b> ${plural(n, 'díl', 'díly', 'dílů')}${t > 1 ? ` · ${t} typy skla` : ''}</p>`;
-    h += `<p class="muted">Sloupce: ${cols.join(', ')}${parsed.unitAuto ? ` · rozměry vypadají jako ${parsed.unit === 'm' ? 'metry' : parsed.unit} – přepočteno na mm` : ''}</p>`;
-    if (parsed.warnings.length) {
-      const w = parsed.warnings;
-      h += `<ul>${w.slice(0, 6).map(x => `<li>${esc(x)}</li>`).join('')}${w.length > 6 ? `<li>… a dalších ${w.length - 6}</li>` : ''}</ul>`;
+  function resolveTypes(parsed) {
+    const cat = settings.types, def = cat.find(t => t.id === settings.defType) || cat[0];
+    const cache = new Map(), adhoc = new Map(), count = new Map();
+    let noType = 0;
+    for (const p of parsed.pieces) {
+      let t;
+      if (!p.type) { noType++; t = def; }
+      else {
+        if (!cache.has(p.type)) cache.set(p.type, matchType(p.type, cat));
+        t = cache.get(p.type);
+        if (!t) {
+          const key = 'x:' + norm(p.type);
+          t = adhoc.get(key);
+          if (!t) { t = {id: key, name: p.type, thick: null, W: def.W, H: def.H, color: '#6F817B', adhoc: true}; adhoc.set(key, t); }
+        }
+      }
+      p.tid = t.id;
+      count.set(t.id, (count.get(t.id) || 0) + 1);
     }
+    return {types: [...cat, ...adhoc.values()].filter(t => count.has(t.id)), count, adhoc: [...adhoc.values()], noType, def};
+  }
+
+  function renderParseInfo(parsed, rt) {
+    if (parsed.error) { els.info.innerHTML = `<p class="err">${esc(parsed.error)}</p>`; return; }
+    const n = parsed.pieces.length, o = parsed.orders;
+    const cols = ['order', 'type', 'thick', 'w', 'h', 'q', 'note'].filter(r => parsed.map[r] != null).map(r => ROLE_NAME[r]);
+    let h = `<p>${fileName ? `<b>${esc(fileName)}</b> · ` : ''}<b>${fmt(o)}</b> ${plural(o, 'objednávka', 'objednávky', 'objednávek')} · <b>${fmt(n)}</b> ${plural(n, 'díl', 'díly', 'dílů')}</p>`;
+    if (rt) h += `<div class="chips">${rt.types.map(t => `<span class="tchip${t.adhoc ? ' unknown' : ''}" style="${tcStyle(t)}">${esc(typeLabel(t))} <b>${fmt(rt.count.get(t.id))}</b></span>`).join('')}</div>`;
+    h += `<p class="muted">Sloupce: ${cols.join(', ')}${parsed.unitAuto ? ` · rozměry vypadají jako ${parsed.unit === 'm' ? 'metry' : parsed.unit} – přepočteno na mm` : ''}</p>`;
+    const w = parsed.warnings.slice();
+    if (rt) {
+      for (const t of rt.adhoc) w.unshift(`Druh „${t.name}“ není mezi druhy skla – řeže se zvlášť z tabule ${t.W} × ${t.H} mm. Doplňte ho do Druhů skla.`);
+      if (rt.noType && (parsed.map.type != null || parsed.map.thick != null)) w.unshift(`U ${rt.noType} ${plural(rt.noType, 'dílu', 'dílů', 'dílů')} chybí druh skla – beru „${typeLabel(rt.def)}“.`);
+      else if (rt.noType) w.unshift(`Poptávka nemá sloupec „Druh skla“ – všechny díly beru jako „${typeLabel(rt.def)}“.`);
+    }
+    if (w.length) h += `<ul>${w.slice(0, 6).map(x => `<li>${esc(x)}</li>`).join('')}${w.length > 6 ? `<li>… a dalších ${w.length - 6}</li>` : ''}</ul>`;
     els.info.innerHTML = h;
   }
 
@@ -944,16 +1231,22 @@ function sampleDemand() {
     els.progBar.style.width = (Math.max(0, Math.min(1, frac)) * 100).toFixed(1) + '%';
     els.progText.textContent = text;
   }
-
-  const pieceKey = p => [p.type, p.order, p.w, p.h].join('\u0001');
+  const pieceKey = p => [p.tid, p.order, p.w, p.h].join('\u0001');
+  const snapType = t => ({id: t.id, name: t.name, thick: t.thick, W: t.W, H: t.H, color: t.color, label: typeLabel(t), adhoc: !!t.adhoc});
 
   async function compute(budgetOverride) {
     const {s, err} = readSettings();
     els.setErr.textContent = err;
     if (err) return;
-    settings = s; saveSettings(settings); renderSpec();
+    const tr = readTypes();
+    els.typeErr.textContent = tr.err;
+    if (tr.err) return;
+    settings = s; settings.types = tr.types; settings.defType = els.defType.value || settings.defType;
+    saveSettings(settings); renderSpec();
+    closeShop();
     const parsed = parseDemand(els.text.value, settings.unit);
-    renderParseInfo(parsed);
+    const rt = parsed.error ? null : resolveTypes(parsed);
+    renderParseInfo(parsed, rt);
     if (parsed.error) {
       els.results.classList.remove('stale'); els.notice.innerHTML = '';
       els.body.innerHTML = `<div class="empty"><h2>Zatím není co řezat</h2><p>${esc(parsed.error)}</p></div>`;
@@ -962,7 +1255,6 @@ function sampleDemand() {
     const myRun = ++runSeq;
     const cancelled = () => myRun !== runSeq;
     els.run.disabled = true; els.run.textContent = 'Počítám…';
-    const cfg = {W: settings.W, H: settings.H, kerf: settings.kerf, trim: settings.trim, rotate: settings.rotate};
 
     // Uříznuté tabule z minulého plánu zůstávají beze změny; jejich díly se z poptávky odečtou.
     const pool = new Map(), frozen = new Map();
@@ -973,69 +1265,83 @@ function sampleDemand() {
         if (!sh.cut) continue;
         if (!sh.items.some(it => pool.get(pieceKey(it.p)) > 0)) { droppedCut++; continue; }
         for (const it of sh.items) { const k = pieceKey(it.p), c = pool.get(k) || 0; if (c > 0) pool.set(k, c - 1); }
-        const gk = g.key == null ? '' : g.key;
-        if (!frozen.has(gk)) frozen.set(gk, []);
-        frozen.get(gk).push(sh); keptCut++;
+        if (!frozen.has(g.key)) frozen.set(g.key, []);
+        frozen.get(g.key).push(sh); keptCut++;
       }
     }
     const rest = [];
     for (const p of parsed.pieces) { const k = pieceKey(p), c = pool.get(k) || 0; if (c > 0) { pool.set(k, c - 1); rest.push(p); } }
 
     const gm = new Map();
-    for (const p of rest) { if (!gm.has(p.type)) gm.set(p.type, []); gm.get(p.type).push(p); }
-    const keys = [...new Set([...gm.keys(), ...frozen.keys()])].sort(collator.compare);
+    for (const p of rest) { if (!gm.has(p.tid)) gm.set(p.tid, []); gm.get(p.tid).push(p); }
+    const types = rt.types.filter(t => gm.has(t.id) || frozen.has(t.id));
     const total = Math.max(1, rest.length), budget = budgetOverride || BUDGET[settings.effort] || 4000;
     const t0 = performance.now();
-    const groups = []; let done = 0, runs = 0;
+    const groups = [], fresh = []; let done = 0, runs = 0;
     showProgress(0, 'Připravuji…');
     await new Promise(r => setTimeout(r, 20));
-    for (let gi = 0; gi < keys.length; gi++) {
-      const key = keys[gi], pcs = gm.get(key) || [], fz = (frozen.get(key) || []).sort((a, b) => a.idx - b.idx);
-      const label = key || (keys.length > 1 ? 'Bez typu' : 'Sklo');
+    for (let gi = 0; gi < types.length; gi++) {
+      const t = types[gi], pcs = gm.get(t.id) || [], fz = frozen.get(t.id) || [];
+      const label = typeLabel(t);
       let sheets = [], lb = 0, n = 0, unfit = [];
       if (pcs.length) {
+        const cfg = {W: t.W, H: t.H, kerf: settings.kerf, trim: settings.trim, minStrip: settings.minStrip, rotate: settings.rotate};
         const ctx = Engine.prepare(pcs, cfg);
         const share = Math.max(250, budget * pcs.length / total);
         const res = await Engine.solve(ctx, share, pr => {
           showProgress((done + Math.min(1, pr.frac) * pcs.length) / total,
-            `${keys.length > 1 ? label + ': ' : ''}vyzkoušeno ${fmt(pr.runs)} variant · nejlépe ${fmt(pr.best)} ${plural(pr.best, 'tabule', 'tabule', 'tabulí')} (min. ${fmt(pr.lb)})`);
+            `${label}: vyzkoušeno ${fmt(pr.runs)} variant · nejlépe ${fmt(pr.best)} ${plural(pr.best, 'tabule', 'tabule', 'tabulí')} (min. ${fmt(pr.lb)})`);
         }, cancelled, 4101 + gi);
         if (cancelled()) return;
         sheets = Engine.materialize(ctx, res.sheets); lb = ctx.lb; n = ctx.total; unfit = ctx.unfit; runs += res.runs;
       }
-      // nové tabule dostanou čísla, která uříznuté tabule nepoužívají
-      const usedIdx = new Set(fz.map(x => x.idx));
-      let next = 1;
-      for (const sh of sheets) { while (usedIdx.has(next)) next++; sh.idx = next++; }
-      const fzPieces = fz.reduce((a, x) => a + x.items.length, 0);
-      groups.push({gid: 'g' + gi, key, label, lb: lb + fz.length, total: n + fzPieces, unfit, sheets: fz.concat(sheets).sort((a, b) => a.idx - b.idx)});
+      fresh.push(sheets);
+      groups.push({gid: 'g' + gi, key: t.id, type: snapType(t), lb: lb + fz.length, total: n + fz.reduce((a, x) => a + x.items.length, 0), unfit, sheets: fz.concat(sheets)});
       done += pcs.length;
     }
+    // Čísla tabulí jsou společná pro všechny druhy; uříznuté tabule si svá čísla nechávají.
+    const usedIdx = new Set();
+    for (const g of groups) for (const sh of g.sheets) if (sh.cut) usedIdx.add(sh.idx);
+    let next = 1;
+    for (const list of fresh) for (const sh of list) { while (usedIdx.has(next)) next++; sh.idx = next++; }
+    for (const g of groups) g.sheets.sort((a, b) => a.idx - b.idx);
+
     els.run.disabled = false; els.run.textContent = 'Spočítat řezání';
     els.prog.hidden = true;
-    lastResult = {cfg, orders: parsed.orders, groups, runs, ms: performance.now() - t0, multi: keys.length > 1, keptCut, droppedCut};
+    lastResult = {v: 2, cfg: {kerf: settings.kerf, trim: settings.trim, minStrip: settings.minStrip, rotate: settings.rotate}, orders: parsed.orders, groups, runs, ms: performance.now() - t0, multi: groups.length > 1, keptCut, droppedCut};
     renderResults(lastResult);
     saveJob();
   }
 
   /* ---------- Uložení rozpracovaného plánu (v tomto prohlížeči) ---------- */
-  const JOB_KEY = 'rezani-skla/plan/v1';
   function saveJob() {
     if (!lastResult) return;
     try {
-      localStorage.setItem(JOB_KEY, JSON.stringify({v: 1, savedAt: Date.now(), text: els.text.value, fileName, isSample, result: lastResult}));
+      localStorage.setItem(JOB_KEY, JSON.stringify({v: 2, savedAt: Date.now(), text: els.text.value, fileName, isSample, result: lastResult}));
     } catch (e) {
       if (!$('#saveErr')) els.notice.insertAdjacentHTML('beforeend', '<div class="notice warn" id="saveErr"><b>Stav se nepodařilo uložit.</b><span>Prohlížeč nepovoluje ukládání (anonymní okno?). Značky „uříznuto“ po zavření stránky zmizí.</span></div>');
     }
   }
+  function migrateOldJob(j) {
+    const R = j.result;
+    R.groups.forEach((g, i) => {
+      const sh0 = g.sheets[0] || {}, id = 'x:' + norm(g.key || g.label || 'g' + i), label = g.label || 'Sklo';
+      g.type = {id, name: label, thick: null, W: sh0.W || 2000, H: sh0.H || 1000, color: '#6F817B', label, adhoc: true};
+      g.key = id;
+      g.sheets.forEach(sh => sh.items.forEach(it => { it.p.tid = id; }));
+    });
+    R.v = 2;
+    return j;
+  }
   function loadJob() {
     try {
       const j = JSON.parse(localStorage.getItem(JOB_KEY) || 'null');
-      if (j && j.v === 1 && j.result && Array.isArray(j.result.groups)) return j;
+      if (j && j.v === 2 && j.result && Array.isArray(j.result.groups)) return j;
+      const o = JSON.parse(localStorage.getItem(JOB_OLD) || 'null');
+      if (o && o.v === 1 && o.result && Array.isArray(o.result.groups)) return migrateOldJob(o);
     } catch (e) { /* bez úložiště */ }
     return null;
   }
-  const when = t => new Date(t).toLocaleString('cs-CZ', {day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'});
 
   /* ---------- Stav řezání ---------- */
   function workStats(R) {
@@ -1053,11 +1359,13 @@ function sampleDemand() {
   }
   function workHTML(R) {
     const w = workStats(R), pct = w.sheets ? w.cut / w.sheets * 100 : 0, f = settings.filter;
+    const per = R.groups.map(g => `<span class="tchip" style="${tcStyle(g.type)}">${esc(g.type.label)} <b>${g.sheets.filter(x => x.cut).length}/${g.sheets.length}</b></span>`).join('');
     return `<div class="work-l"><span class="lbl">Uříznuto</span><span class="work-v"><b>${fmt(w.cut)}</b> z ${fmt(w.sheets)} ${w.sheets === 1 ? 'tabule' : 'tabulí'}</span></div>
       <div class="wbar" role="progressbar" aria-label="Uříznuté tabule" aria-valuemin="0" aria-valuemax="${w.sheets}" aria-valuenow="${w.cut}"><i style="width:${pct.toFixed(1)}%"></i></div>
       <span class="work-o">hotové objednávky <b>${fmt(w.oDone)}</b> z ${fmt(w.oTotal)}</span>
       <span class="seg" role="group" aria-label="Zobrazit tabule"><button type="button" data-filter="all" aria-pressed="${f === 'all'}">Vše</button><button type="button" data-filter="todo" aria-pressed="${f === 'todo'}">Zbývá uříznout</button><button type="button" data-filter="done" aria-pressed="${f === 'done'}">Uříznuté</button></span>
-      ${w.cut ? '<span class="confirm" id="clearCutWrap"><button type="button" class="btn btn-quiet" id="clearCut">Zrušit značky</button></span>' : ''}`;
+      ${w.cut ? '<span class="confirm" id="clearCutWrap"><button type="button" class="btn btn-quiet" id="clearCut">Zrušit značky</button></span>' : ''}
+      ${R.groups.length > 1 ? `<div class="chips">${per}</div>` : ''}`;
   }
   function statusHTML(e) {
     if (!e) return '';
@@ -1075,13 +1383,21 @@ function sampleDemand() {
   const cutBtnHTML = sh => sh.cut
     ? `<span class="tick" aria-hidden="true">✓</span>Uříznuto${sh.cutAt ? ` <small>${esc(when(sh.cutAt))}</small>` : ''}`
     : '<span class="tick" aria-hidden="true"></span>Označit jako uříznuté';
-  function findSheet(gid, idx) {
-    const g = lastResult && lastResult.groups.find(x => x.gid === gid);
-    return g ? g.sheets.find(x => x.idx === idx) : null;
+  const groupById = gid => lastResult && lastResult.groups.find(g => g.gid === gid);
+  function findSheet(gid, idx) { const g = groupById(gid); return g ? g.sheets.find(x => x.idx === idx) : null; }
+  function setCut(g, sh, val) {
+    sh.cut = val; sh.cutAt = val ? Date.now() : null;
+    const card = document.getElementById(`${g.gid}-s${sh.idx}`);
+    if (card) {
+      card.classList.toggle('done', val);
+      const b = card.querySelector('.cutbtn');
+      if (b) { b.setAttribute('aria-pressed', String(val)); b.innerHTML = cutBtnHTML(sh); }
+    }
+    updateWork(); saveJob();
   }
 
   /* ---------- Vykreslení ---------- */
-  function pieceSVG(it) {
+  function pieceSVG(it, freed) {
     const {x, y, w, h, p} = it, id = String(p.order), dims = `${mm(w)}×${mm(h)}`;
     const tip = `Objednávka ${id} · ${mm(p.w)} × ${mm(p.h)} mm${it.rot ? ' (otočeno)' : ''}${p.note ? ' · ' + p.note : ''}`;
     const fs = Math.max(30, Math.min(66, Math.min(w, h) * 0.2));
@@ -1096,44 +1412,83 @@ function sampleDemand() {
       const f2 = 26;
       if (h >= f2 * 1.3 && w >= id.length * f2 * 0.56 + 10) t = `<text x="${cx}" y="${cy + f2 * 0.35}" font-size="${f2}" text-anchor="middle">${esc(id)}</text>`;
     }
-    return `<g class="pc" data-o="${esc(id)}"><title>${esc(tip)}</title><rect x="${x}" y="${y}" width="${w}" height="${h}"/>${t}</g>`;
+    return `<g class="pc${freed ? ' freed' : ''}" data-o="${esc(id)}"><title>${esc(tip)}</title><rect x="${x}" y="${y}" width="${w}" height="${h}"/>${t}</g>`;
   }
 
-  function sheetSVG(sh, label) {
-    const {W, H, trim} = sh, pad = 4;
-    let o = `<svg class="sv" viewBox="${-pad} ${-pad} ${W + 2 * pad} ${H + 2 * pad}" role="img" aria-label="${esc(label)}">`;
-    o += `<rect class="s-waste" x="0" y="0" width="${W}" height="${H}"/>`;
-    if (trim > 0) o += `<path class="s-trim" fill-rule="evenodd" d="M0 0H${W}V${H}H0Z M${trim} ${trim}V${H - trim}H${W - trim}V${trim}Z"/>`;
-    if (sh.cuts.length) o += `<path class="s-cut" d="${sh.cuts.map(c => `M${c[0]} ${c[1]}L${c[2]} ${c[3]}`).join('')}"/>`;
-    const r = sh.rem;
-    if (r && r.w >= 150 && r.h >= 150 && r.w * r.h >= 60000) {
-      o += `<rect class="s-rem" x="${r.x + 6}" y="${r.y + 6}" width="${r.w - 12}" height="${r.h - 12}"/>`;
-      const txt = `zbytek ${mm(r.w)}×${mm(r.h)}`, fs = Math.max(26, Math.min(52, Math.min(r.w, r.h) * 0.12));
-      if (r.w >= txt.length * fs * 0.62 + 30 && r.h >= fs * 2) o += `<text class="s-remtxt" x="${r.x + r.w / 2}" y="${r.y + r.h / 2 + fs * 0.35}" font-size="${fs.toFixed(1)}" text-anchor="middle">${txt}</text>`;
+  function dimSVG(st, S) {
+    const fs = S * 0.026;
+    if (st.dir === 'v') {
+      const y = st.R.y + Math.min(S * 0.035, st.R.h * 0.2), x1 = st.R.x, x2 = st.pos, tk = fs * 0.45;
+      return `<g class="dim"><path d="M${x1} ${y}H${x2}M${x1} ${y - tk}V${y + tk}M${x2} ${y - tk}V${y + tk}"/><text x="${(x1 + x2) / 2}" y="${y + fs * 1.3}" font-size="${fs.toFixed(1)}" text-anchor="middle">${mm(st.measure)} mm</text></g>`;
     }
-    for (const it of sh.items) o += pieceSVG(it);
-    o += `<rect class="s-edge" x="0" y="0" width="${W}" height="${H}"/>`;
-    return o + '</svg>';
+    const x = st.R.x + Math.min(S * 0.035, st.R.w * 0.2), y1 = st.R.y, y2 = st.pos, tk = fs * 0.45;
+    return `<g class="dim"><path d="M${x} ${y1}V${y2}M${x - tk} ${y1}H${x + tk}M${x - tk} ${y2}H${x + tk}"/><text x="${x + fs * 0.6}" y="${(y1 + y2) / 2 + fs * 0.35}" font-size="${fs.toFixed(1)}">${mm(st.measure)} mm</text></g>`;
   }
 
-  function sheetCard(g, sh, multi) {
-    const pct = sh.util * 100, cls = pct >= 85 ? 'good' : pct < 60 ? 'warn' : '';
-    const title = `${multi ? g.label + ' · ' : ''}Tabule ${sh.idx}`;
+  // Výkres tabule. S parametrem step (počet hotových kroků) kreslí stav pro řezání krok za krokem.
+  function sheetSVG(sh, o) {
+    o = o || {};
+    const {W, H, trim} = sh, S = Math.max(W, H), pad = S * 0.004, shop = o.step != null, steps = sh.steps || null;
+    const cur = shop && steps ? steps[o.step] : null;
+    const freed = new Set();
+    if (shop && steps) for (let j = 0; j < Math.min(o.step, steps.length); j++) (steps[j].freed || []).forEach(i => freed.add(i));
+    let s = `<svg class="sv" viewBox="${-pad} ${-pad} ${W + 2 * pad} ${H + 2 * pad}" role="img" aria-label="${esc(o.label || '')}">`;
+    s += `<rect class="s-waste" x="0" y="0" width="${W}" height="${H}"/>`;
+    if (trim > 0) s += `<path class="s-trim${cur && cur.trim ? ' cur' : ''}" fill-rule="evenodd" d="M0 0H${W}V${H}H0Z M${trim} ${trim}V${H - trim}H${W - trim}V${trim}Z"/>`;
+    const lines = steps
+      ? steps.map((st, j) => st.trim ? null : {j, n: st.n, d: st.dir === 'v' ? `M${st.pos} ${st.a}L${st.pos} ${st.b}` : `M${st.a} ${st.pos}L${st.b} ${st.pos}`, mx: st.dir === 'v' ? st.pos : (st.a + st.b) / 2, my: st.dir === 'v' ? (st.a + st.b) / 2 : st.pos}).filter(Boolean)
+      : (sh.cuts || []).map(c => ({d: `M${c[0]} ${c[1]}L${c[2]} ${c[3]}`}));
+    if (!shop && lines.length) s += `<path class="s-cut" d="${lines.map(l => l.d).join('')}"/>`;
+    const r = sh.rem;
+    if (!shop && r && r.w >= 150 && r.h >= 150 && r.w * r.h >= 60000) {
+      s += `<rect class="s-rem" x="${r.x + 6}" y="${r.y + 6}" width="${r.w - 12}" height="${r.h - 12}"/>`;
+      const txt = `zbytek ${mm(r.w)}×${mm(r.h)}`, fs = Math.max(26, Math.min(52, Math.min(r.w, r.h) * 0.12));
+      if (r.w >= txt.length * fs * 0.62 + 30 && r.h >= fs * 2) s += `<text class="s-remtxt" x="${r.x + r.w / 2}" y="${r.y + r.h / 2 + fs * 0.35}" font-size="${fs.toFixed(1)}" text-anchor="middle">${txt}</text>`;
+    }
+    sh.items.forEach((it, i) => { s += pieceSVG(it, freed.has(i)); });
+    if (shop) {
+      if (cur && !cur.trim) s += `<rect class="c-reg" x="${cur.R.x}" y="${cur.R.y}" width="${cur.R.w}" height="${cur.R.h}"/>`;
+      for (const l of lines) s += `<path class="${l.j < o.step ? 'c-done' : l.j === o.step ? 'c-cur' : 'c-next'}" d="${l.d}"/>`;
+      if (cur && !cur.trim) s += dimSVG(cur, S);
+    }
+    if (lines.length && lines[0].n != null) {
+      const rr = S * 0.013, fs = rr * 1.15;
+      s += '<g class="cutno">' + lines.map(l => `<g class="${shop ? (l.j < o.step ? 'n-done' : l.j === o.step ? 'n-cur' : 'n-next') : ''}"><circle cx="${l.mx}" cy="${l.my}" r="${rr.toFixed(1)}"/><text x="${l.mx}" y="${(l.my + fs * 0.36).toFixed(1)}" font-size="${fs.toFixed(1)}" text-anchor="middle">${l.n}</text></g>`).join('') + '</g>';
+    }
+    s += `<rect class="s-edge" x="0" y="0" width="${W}" height="${H}"/>`;
+    return s + '</svg>';
+  }
+
+  const nCutsOf = sh => sh.steps ? sh.steps.reduce((a, st) => a + (st.trim ? 4 : 1), 0) : sh.nCuts;
+  function stepShort(sh, st) {
+    const fr = (st.freed || []).map(i => sh.items[i]).filter(Boolean).map(it => `<b>${esc(it.p.order)}</b>`).join(', ');
+    if (st.trim) return `ořízni okraje o <b>${mm(st.trim)}</b> mm${fr ? ` → ${fr}` : ''}`;
+    return `${st.dir === 'v' ? 'svisle' : 'vodorovně'} <b>${mm(st.measure)}</b> od ${st.dir === 'v' ? 'levé' : 'horní'} <span class="muted">(kus ${mm(st.R.w)}×${mm(st.R.h)})</span>${fr ? ` → ${fr}` : ''}`;
+  }
+
+  function sheetCard(g, sh) {
+    const t = g.type, pct = sh.util * 100, cls = pct >= 85 ? 'good' : pct < 60 ? 'warn' : '';
+    const title = `Tabule ${sh.idx}`, nc = nCutsOf(sh);
     const r = sh.rem;
     const remTxt = r && r.w >= 100 && r.h >= 100 ? `<span>největší zbytek <b>${mm(r.w)} × ${mm(r.h)}</b> mm</span>` : '<span>bez použitelného zbytku</span>';
     const list = sh.items.map(it => `<li><b>${esc(it.p.order)}</b> ${mm(it.p.w)}×${mm(it.p.h)}${it.rot ? ' ↻' : ''}${it.p.note ? ' · ' + esc(it.p.note) : ''}</li>`).join('');
-    return `<article class="sheet${sh.cut ? ' done' : ''}" id="${g.gid}-s${sh.idx}" data-g="${g.gid}" data-i="${sh.idx}">
-      <header class="sh-h"><h3>${esc(title)}</h3><span class="pill ${cls}">${fmt(pct, 1)} %</span><span class="sh-m">${sh.items.length} ${plural(sh.items.length, 'díl', 'díly', 'dílů')} · ${sh.nCuts} ${plural(sh.nCuts, 'řez', 'řezy', 'řezů')}</span></header>
-      ${sheetSVG(sh, title + `, využití ${fmt(pct, 1)} %`)}
-      <div class="sh-f">${remTxt}<button type="button" class="cutbtn" aria-pressed="${!!sh.cut}">${cutBtnHTML(sh)}</button></div>
-      <details class="sh-d"><summary>Seznam dílů</summary><ol>${list}</ol></details>
+    const steps = sh.steps && sh.steps.length ? sh.steps.map(st => `<li>${stepShort(sh, st)}</li>`).join('') : '';
+    return `<article class="sheet${sh.cut ? ' done' : ''}" id="${g.gid}-s${sh.idx}" data-g="${g.gid}" data-i="${sh.idx}" style="${tcStyle(t)}">
+      <div class="sh-band"><span class="sh-type">${esc(nameTxt(t))}</span><span class="sh-thick"><small>tloušťka</small>${esc(thickTxt(t))}</span></div>
+      <header class="sh-h"><h3>${title}</h3><span class="pill ${cls}">${fmt(pct, 1)} %</span><span class="sh-m">${sh.items.length} ${plural(sh.items.length, 'díl', 'díly', 'dílů')} · ${nc} ${plural(nc, 'řez', 'řezy', 'řezů')} · ${sh.W}×${sh.H}</span></header>
+      ${sheetSVG(sh, {label: `${typeLabel(t)}, ${title}, využití ${fmt(pct, 1)} %`})}
+      <div class="sh-f">${remTxt}<div class="sh-btns">${steps ? '<button type="button" class="btn stepbtn">Řezat postupně ▶</button>' : ''}<button type="button" class="cutbtn" aria-pressed="${!!sh.cut}">${cutBtnHTML(sh)}</button></div></div>
+      <div class="sh-ds">
+        ${steps ? `<details class="sh-d"><summary>Postup řezání (${sh.steps.length} ${plural(sh.steps.length, 'krok', 'kroky', 'kroků')})</summary><ol>${steps}</ol></details>` : ''}
+        <details class="sh-d"><summary>Seznam dílů</summary><ol class="cols">${list}</ol></details>
+      </div>
     </article>`;
   }
 
   function renderResults(R, extra) {
     extra = extra || {};
-    const {cfg, groups, multi} = R;
-    const areaOf = sh => (sh.W || cfg.W) * (sh.H || cfg.H) / 1e6;
+    const {cfg, groups} = R;
+    const areaOf = sh => sh.W * sh.H / 1e6;
     let nSheets = 0, lb = 0, pieceArea = 0, sheetArea = 0, nPieces = 0, anyCut = false;
     const unfit = [];
     for (const g of groups) {
@@ -1147,50 +1502,53 @@ function sampleDemand() {
 
     let notice = '';
     if (extra.restored) notice += `<div class="notice info"><b>Pokračujete v uloženém plánu</b><span>z ${esc(when(extra.restored))}. Uložený je jen v tomto prohlížeči.</span></div>`;
-    if (isSample) notice += `<div class="notice info"><b>Ukázková data</b><span>200 smyšlených objednávek protipožárního skla EI 30 a EI 60. Nahrajte vlastní poptávku vlevo.</span></div>`;
+    if (isSample) notice += `<div class="notice info"><b>Ukázková data</b><span>200 smyšlených objednávek ve čtyřech druzích skla. Nahrajte vlastní poptávku vlevo.</span></div>`;
     if (!extra.restored && R.keptCut) notice += `<div class="notice info"><b>${fmt(R.keptCut)} ${plural(R.keptCut, 'uříznutá tabule zůstala', 'uříznuté tabule zůstaly', 'uříznutých tabulí zůstalo')} beze změny.</b><span>Nově se rozvrhly jen díly, které ještě uříznuté nejsou.</span></div>`;
     if (!extra.restored && R.droppedCut) notice += `<div class="notice warn"><b>${fmt(R.droppedCut)} ${plural(R.droppedCut, 'uříznutá tabule patřila', 'uříznuté tabule patřily', 'uříznutých tabulí patřilo')} k předchozí poptávce.</b><span>V nové poptávce jejich díly nejsou, proto v plánu už nejsou.</span></div>`;
     if (unfit.length) {
-      notice += `<div class="notice bad"><b>${fmt(unfit.length)} ${plural(unfit.length, 'díl je větší', 'díly jsou větší', 'dílů je větších')} než tabule ${fmt(cfg.W)} × ${fmt(cfg.H)} mm${cfg.trim ? ' po ořezu okrajů' : ''}</b><span>– nejsou v plánu.</span>
-        <ul>${unfit.slice(0, 12).map(u => `<li>${esc(u.p.order)}: ${mm(u.p.w)} × ${mm(u.p.h)} mm${multi ? ' (' + esc(u.g.label) + ')' : ''}</li>`).join('')}${unfit.length > 12 ? `<li>… a dalších ${unfit.length - 12}</li>` : ''}</ul></div>`;
+      notice += `<div class="notice bad"><b>${fmt(unfit.length)} ${plural(unfit.length, 'díl se nevejde', 'díly se nevejdou', 'dílů se nevejde')} na tabuli svého druhu${cfg.trim ? ' po ořezu okrajů' : ''}${cfg.minStrip ? ' (i s nejužším odlomkem)' : ''}</b><span>– nejsou v plánu.</span>
+        <ul>${unfit.slice(0, 12).map(u => `<li>${esc(u.p.order)}: ${mm(u.p.w)} × ${mm(u.p.h)} mm (${esc(u.g.type.label)}, tabule ${u.g.type.W} × ${u.g.type.H})</li>`).join('')}${unfit.length > 12 ? `<li>… a dalších ${unfit.length - 12}</li>` : ''}</ul></div>`;
     }
     els.notice.innerHTML = notice;
 
-    if (!nPieces) { els.body.innerHTML = `<div class="empty"><h2>Žádný díl se nevejde na tabuli</h2><p>Zkontrolujte rozměr tabule v nastavení nebo jednotky v poptávce.</p></div>`; return; }
+    if (!nPieces) { els.body.innerHTML = `<div class="empty"><h2>Žádný díl se nevejde na tabuli</h2><p>Zkontrolujte rozměry tabulí v Druzích skla nebo jednotky v poptávce.</p></div>`; return; }
 
     const optimal = nSheets === lb;
     let h = `<section class="kpis" aria-label="Souhrn">
       <div class="kpi"><span class="l">Tabulí</span><span class="v">${fmt(nSheets)}</span><span class="s">${optimal ? '<span class="chip">nejnižší možný počet</span>' : `teoretické minimum ${fmt(lb)}`}</span></div>
       <div class="kpi"><span class="l">Využití skla</span><span class="v">${fmt(util * 100, 1)}<small>%</small></span><span class="s">díly ${fmt(pieceArea, 2)} m² z ${fmt(sheetArea, 2)} m²</span></div>
       <div class="kpi"><span class="l">Prořez</span><span class="v">${fmt(waste, 2)}<small>m²</small></span><span class="s">${fmt((1 - util) * 100, 1)} % plochy tabulí</span></div>
-      <div class="kpi"><span class="l">Dílů</span><span class="v">${fmt(nPieces)}</span><span class="s">${fmt(R.orders)} ${plural(R.orders, 'objednávka', 'objednávky', 'objednávek')}</span></div>
+      <div class="kpi"><span class="l">Dílů</span><span class="v">${fmt(nPieces)}</span><span class="s">${fmt(R.orders)} ${plural(R.orders, 'objednávka', 'objednávky', 'objednávek')} · ${groups.length} ${plural(groups.length, 'druh', 'druhy', 'druhů')} skla</span></div>
     </section>
     <section class="work" id="work" aria-label="Stav řezání">${workHTML(R)}</section>`;
 
     h += `<div class="bar2">
-      <p class="meta">Vyzkoušeno ${fmt(R.runs)} variant rozložení za ${fmt(R.ms / 1000, 1)} s.${anyCut ? '' : ' Tabule jsou seřazené od nejlépe využité.'}</p>
+      <p class="meta">Vyzkoušeno ${fmt(R.runs)} variant rozložení za ${fmt(R.ms / 1000, 1)} s.${anyCut ? '' : ' V každém druhu jsou nejlépe využité tabule první.'}</p>
       <div class="tools">
+        <button type="button" class="btn btn-go" id="shopStart">▶ Řezat postupně</button>
         <button type="button" class="btn" id="copyPlan">Kopírovat plán pro Excel</button>
         ${framed ? '' : '<button type="button" class="btn" id="csvPlan">Stáhnout CSV</button><button type="button" class="btn" id="printPlan">Tisk / PDF</button>'}
-        <span class="seg" role="group" aria-label="Velikost náhledů"><button type="button" data-view="s" aria-pressed="${settings.view !== 'l'}">Malé</button><button type="button" data-view="l" aria-pressed="${settings.view === 'l'}">Velké</button></span>
+        <span class="seg" role="group" aria-label="Velikost náhledů"><button type="button" data-view="s" aria-pressed="${settings.view !== 'l'}">Malé</button><button type="button" data-view="l" aria-pressed="${settings.view === 'l'}">Velké s čísly řezů</button></span>
       </div>
     </div>
     <div id="copyOut" hidden></div>
     <div class="legend" aria-label="Legenda">
       <span><svg viewBox="0 0 26 14"><rect class="lg-pc" x="1" y="1" width="24" height="12"/></svg>díl (objednávka, rozměr na stole)</span>
       <span><svg viewBox="0 0 26 14"><rect class="lg-w" x="1" y="1" width="24" height="12"/></svg>prořez</span>
-      <span><svg viewBox="0 0 26 14"><path class="lg-cut" d="M1 7H25"/></svg>řez ve zbytku</span>
+      <span><svg viewBox="0 0 26 14"><path class="lg-cut" d="M1 7H25"/></svg>řez</span>
       <span><svg viewBox="0 0 26 14"><rect class="lg-rem" x="2" y="2" width="22" height="10"/></svg>použitelný zbytek</span>
       <span><svg viewBox="0 0 26 14"><rect class="lg-hi" x="1" y="1" width="24" height="12"/></svg>vybraná objednávka</span>
+      <span>barevný pruh = druh a tloušťka skla</span>
     </div>`;
 
     for (const g of groups) {
       if (!g.sheets.length) continue;
       let gA = 0, gp = 0;
       for (const s of g.sheets) { gA += areaOf(s); for (const it of s.items) gp += it.w * it.h / 1e6; }
-      h += `<section class="group" aria-label="${esc(g.label)}">`;
-      if (multi) h += `<header class="group-h"><h2>${esc(g.label)}</h2><span class="gs">${fmt(g.sheets.length)} ${plural(g.sheets.length, 'tabule', 'tabule', 'tabulí')} (min. ${fmt(g.lb)}) · využití ${fmt(gp / gA * 100, 1)} % · prořez ${fmt(gA - gp, 2)} m²</span></header>`;
-      h += `<div class="sheets">${g.sheets.map(sh => sheetCard(g, sh, multi)).join('')}</div></section>`;
+      const t = g.type;
+      h += `<section class="group" aria-label="${esc(t.label)}" style="${tcStyle(t)}">
+        <header class="group-h"><h2>${esc(nameTxt(t))}</h2><span class="gthick">${esc(thickTxt(t))}</span><span class="gs">${fmt(g.sheets.length)} ${plural(g.sheets.length, 'tabule', 'tabule', 'tabulí')} ${t.W}×${t.H} (min. ${fmt(g.lb)}) · využití ${fmt(gp / gA * 100, 1)} % · prořez ${fmt(gA - gp, 2)} m²</span></header>
+        <div class="sheets">${g.sheets.map(sh => sheetCard(g, sh)).join('')}</div></section>`;
     }
 
     // přehled objednávek
@@ -1198,29 +1556,125 @@ function sampleDemand() {
     for (const g of groups) for (const s of g.sheets) for (const it of s.items) {
       const id = String(it.p.order);
       let e = orders.get(id);
-      if (!e) { e = {id, types: new Set(), n: 0, c: 0, area: 0, refs: []}; orders.set(id, e); }
-      e.types.add(g.label); e.n++; if (s.cut) e.c++; e.area += it.w * it.h;
+      if (!e) { e = {id, types: new Map(), n: 0, c: 0, area: 0, refs: []}; orders.set(id, e); }
+      e.types.set(g.key, g.type); e.n++; if (s.cut) e.c++; e.area += it.w * it.h;
       const key = g.gid + '-s' + s.idx;
-      if (!e.refs.some(r => r.key === key)) e.refs.push({key, g, idx: s.idx});
+      if (!e.refs.some(r => r.key === key)) e.refs.push({key, idx: s.idx});
     }
     const ord = [...orders.values()].sort((a, b) => collator.compare(a.id, b.id));
     h += `<section class="orders" aria-labelledby="h-orders">
       <div class="orders-h"><h2 id="h-orders">Objednávky</h2><input type="search" class="search" id="orderFilter" placeholder="Hledat objednávku…" aria-label="Hledat objednávku"></div>
-      <div class="tbl-wrap"><table><thead><tr><th>Objednávka</th>${multi ? '<th>Typ skla</th>' : ''}<th class="num">Dílů</th><th class="num">Plocha m²</th><th>Na tabulích</th><th>Stav</th></tr></thead><tbody>
+      <div class="tbl-wrap"><table><thead><tr><th>Objednávka</th><th>Druh skla</th><th class="num">Dílů</th><th class="num">Plocha m²</th><th>Na tabulích</th><th>Stav</th></tr></thead><tbody>
       ${ord.map(e => {
-        const refs = e.refs.sort((a, b) => a.g.gid.localeCompare(b.g.gid) || a.idx - b.idx);
-        let rs = '', lastG = null;
-        for (const r of refs) {
-          if (multi && r.g !== lastG) { rs += `${lastG ? ' ' : ''}<span class="sref-g">${esc(r.g.label)}:</span>`; lastG = r.g; }
-          rs += `<button type="button" class="sref" data-target="${r.key}">${r.idx}</button>`;
-        }
-        return `<tr data-o="${esc(e.id)}" data-s="${esc(norm(e.id))}"><td class="id">${esc(e.id)}</td>${multi ? `<td>${esc([...e.types].join(', '))}</td>` : ''}<td class="num">${e.n}</td><td class="num">${fmt(e.area / 1e6, 2)}</td><td>${rs}</td><td class="st">${statusHTML(e)}</td></tr>`;
+        const rs = e.refs.sort((a, b) => a.idx - b.idx).map(r => `<button type="button" class="sref" data-target="${r.key}">${r.idx}</button>`).join('');
+        const ts = [...e.types.values()].map(t => `<span class="tchip" style="${tcStyle(t)}">${esc(t.label)}</span>`).join(' ');
+        return `<tr data-o="${esc(e.id)}" data-s="${esc(norm(e.id))}"><td class="id">${esc(e.id)}</td><td>${ts}</td><td class="num">${e.n}</td><td class="num">${fmt(e.area / 1e6, 2)}</td><td>${rs}</td><td class="st">${statusHTML(e)}</td></tr>`;
       }).join('')}
       </tbody></table></div></section>`;
 
     els.body.innerHTML = h;
     pinned = ''; setHL('');
   }
+
+  /* ---------- Řezání krok za krokem ---------- */
+  const shopState = {gid: null, idx: null, s: 0, lastFocus: null};
+  const sortedSheets = g => g.sheets.slice().sort((a, b) => a.idx - b.idx);
+  function stepText(sh, st) {
+    const freed = (st.freed || []).map(i => sh.items[i]).filter(Boolean);
+    if (st.trim) return {title: `Ořízni okraje – ze všech stran <b>${mm(st.trim)} mm</b>`, sub: `Celá tabule ${mm(sh.W)} × ${mm(sh.H)} mm`, freed};
+    const v = st.dir === 'v';
+    return {
+      title: `${v ? 'Svislý' : 'Vodorovný'} řez – odměř <b>${mm(st.measure)} mm</b> od ${v ? 'levé' : 'horní'} hrany`,
+      sub: `Kus <b>${mm(st.R.w)} × ${mm(st.R.h)} mm</b> · délka řezu ${mm(st.len)} mm`,
+      freed,
+    };
+  }
+  function openShop(gid, idx) {
+    if (!lastResult) return;
+    let g = gid ? groupById(gid) : null;
+    if (!g) g = lastResult.groups.find(x => x.sheets.some(s => !s.cut && s.steps)) || lastResult.groups[0];
+    if (!g) return;
+    const list = sortedSheets(g);
+    const sh = (idx != null && list.find(s => s.idx === idx)) || list.find(s => !s.cut) || list[0];
+    if (!sh) return;
+    shopState.gid = g.gid; shopState.idx = sh.idx; shopState.s = 0;
+    if (els.shop.hidden) shopState.lastFocus = document.activeElement;
+    els.shop.hidden = false;
+    document.documentElement.classList.add('shop-open');
+    renderShop();
+  }
+  function closeShop() {
+    if (els.shop.hidden) return;
+    els.shop.hidden = true;
+    document.documentElement.classList.remove('shop-open');
+    const lf = shopState.lastFocus;
+    if (lf && lf.isConnected && lf.focus) lf.focus();
+  }
+  function renderShop() {
+    const g = groupById(shopState.gid), sh = g && g.sheets.find(s => s.idx === shopState.idx);
+    if (!sh) { closeShop(); return; }
+    const t = g.type, steps = sh.steps || [], N = steps.length;
+    const s = Math.max(0, Math.min(shopState.s, N));
+    shopState.s = s;
+    const list = sortedSheets(g), pos = list.indexOf(sh) + 1, left = list.filter(x => !x.cut).length;
+    els.shop.setAttribute('style', tcStyle(t));
+    const opts = lastResult.groups.map(x => `<option value="${x.gid}"${x === g ? ' selected' : ''}>${esc(x.type.label)} – zbývá ${x.sheets.filter(y => !y.cut).length}</option>`).join('');
+    let side;
+    if (s < N) {
+      const tx = stepText(sh, steps[s]);
+      side = `<p class="shop-count">Krok ${s + 1} z ${N}</p>
+        <p class="shop-instr">${tx.title}</p>
+        <p class="shop-sub">${tx.sub}</p>
+        ${tx.freed.length ? `<div class="shop-freed"><span class="lbl">Tímto řezem je hotový díl</span>${tx.freed.map(it => `<p><b>${esc(it.p.order)}</b> · ${mm(it.p.w)} × ${mm(it.p.h)} mm${it.p.note ? ' · ' + esc(it.p.note) : ''}</p>`).join('')}</div>` : ''}
+        <div class="shop-nav"><button type="button" class="btn" id="shopPrev"${s === 0 ? ' disabled' : ''}>◀ Zpět</button><button type="button" class="btn shop-next" id="shopNext">${s + 1 === N ? 'Poslední řez hotový ▶' : 'Řez hotový, další ▶'}</button></div>`;
+    } else {
+      side = `<p class="shop-count">${N ? `Všech ${N} ${plural(N, 'krok', 'kroky', 'kroků')} hotovo` : 'Bez řezání'}</p>
+        <p class="shop-instr">Tabule ${sh.idx} je ${N ? 'rozřezaná' : 'celý jeden díl'}.</p>
+        <p class="shop-sub">${sh.items.length} ${plural(sh.items.length, 'díl', 'díly', 'dílů')}: ${sh.items.map(it => `<b>${esc(it.p.order)}</b>`).join(', ')}</p>
+        <div class="shop-nav">${N ? '<button type="button" class="btn" id="shopPrev">◀ Zpět</button>' : ''}<button type="button" class="btn shop-next" id="shopFinish">${sh.cut ? 'Další tabule ▶' : '✓ Uříznuto, další tabule ▶'}</button></div>`;
+    }
+    if (sh.cut) side += '<p class="shop-note">Tahle tabule už je označená jako uříznutá.</p>';
+    if (N) side += `<ol class="shop-list">${steps.map((st, j) => `<li class="${j < s ? 'done' : j === s ? 'cur' : ''}">${stepShort(sh, st)}</li>`).join('')}</ol>`;
+    side += '<p class="shop-keys">Klávesy: → další krok · ← zpět · Esc zavřít</p>';
+    els.shop.innerHTML = `
+      <div class="shop-top">
+        <div class="st-id"><span class="st-type">${esc(nameTxt(t))}</span><span class="st-thick"><small>tloušťka</small>${esc(thickTxt(t))}</span></div>
+        <span class="st-sheet">Tabule ${sh.idx} · ${pos}. z ${list.length} · zbývá uříznout ${left}</span>
+        <div class="st-right"><label class="sr" for="shopType">Druh skla</label><select id="shopType">${opts}</select><button type="button" class="shop-close" id="shopClose">✕ Zavřít</button></div>
+      </div>
+      <div class="shop-main"><div class="shop-fig">${sheetSVG(sh, {step: s, label: `${typeLabel(t)}, tabule ${sh.idx}, krok ${Math.min(s + 1, N)} z ${N}`})}</div><div class="shop-side">${side}</div></div>`;
+    const nb = $('#shopNext') || $('#shopFinish');
+    if (nb) nb.focus({preventScroll: true});
+  }
+  function shopFinish() {
+    const g = groupById(shopState.gid), sh = g && g.sheets.find(s => s.idx === shopState.idx);
+    if (!sh) return;
+    if (!sh.cut) setCut(g, sh, true);
+    const list = sortedSheets(g);
+    const next = list.find(x => !x.cut && x.idx > sh.idx) || list.find(x => !x.cut);
+    if (next) { shopState.idx = next.idx; shopState.s = 0; renderShop(); return; }
+    const og = lastResult.groups.find(x => x.sheets.some(y => !y.cut));
+    els.shop.querySelector('.shop-side').innerHTML = `<p class="shop-count">Hotovo</p><p class="shop-instr">Všechny tabule druhu ${esc(g.type.label)} jsou uříznuté.</p>
+      <div class="shop-nav">${og ? `<button type="button" class="btn shop-next" id="shopGoto" data-g="${og.gid}">Pokračovat: ${esc(og.type.label)} ▶</button>` : '<p class="shop-sub">Celý plán je uříznutý.</p>'}<button type="button" class="btn" id="shopClose2">Zavřít</button></div>`;
+    const b = $('#shopGoto') || $('#shopClose2');
+    if (b) b.focus();
+  }
+  els.shop.addEventListener('click', e => {
+    const id = e.target.closest('button') && e.target.closest('button').id;
+    if (id === 'shopNext') { shopState.s++; renderShop(); }
+    else if (id === 'shopPrev') { shopState.s = Math.max(0, shopState.s - 1); renderShop(); }
+    else if (id === 'shopFinish') shopFinish();
+    else if (id === 'shopClose' || id === 'shopClose2') closeShop();
+    else if (id === 'shopGoto') openShop(e.target.closest('button').dataset.g);
+  });
+  els.shop.addEventListener('change', e => { if (e.target.id === 'shopType') openShop(e.target.value); });
+  document.addEventListener('keydown', e => {
+    if (els.shop.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeShop(); return; }
+    if (e.target.tagName === 'SELECT') return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); const b = $('#shopNext') || $('#shopFinish'); if (b) b.click(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); const b = $('#shopPrev'); if (b && !b.disabled) b.click(); }
+  });
 
   /* ---------- Zvýraznění objednávky ---------- */
   function setHL(o) {
@@ -1234,7 +1688,7 @@ function sampleDemand() {
       const tr = els.body.querySelector(`tbody tr[data-o="${cssStr(pinned)}"]`);
       if (tr) tr.classList.add('pin');
       if (scroll) {
-        const pc = [...els.body.querySelectorAll(`.pc[data-o="${cssStr(pinned)}"]`)].find(x => x.closest('.sheet').offsetParent);
+        const pc = els.body.querySelector(`.pc[data-o="${cssStr(pinned)}"]`);
         const card = pc && pc.closest('.sheet');
         if (card) scrollToCard(card);
       }
@@ -1252,9 +1706,9 @@ function sampleDemand() {
 
   /* ---------- Export ---------- */
   function planRows(R) {
-    const rows = [['Typ skla', 'Tabule', 'Objednávka', 'Šířka (mm)', 'Výška (mm)', 'Otočeno', 'X (mm)', 'Y (mm)', 'Poznámka', 'Uříznuto']];
+    const rows = [['Druh skla', 'Tloušťka (mm)', 'Tabule', 'Objednávka', 'Šířka (mm)', 'Výška (mm)', 'Otočeno', 'X (mm)', 'Y (mm)', 'Poznámka', 'Uříznuto']];
     for (const g of R.groups) for (const s of g.sheets) for (const it of s.items)
-      rows.push([g.label, s.idx, it.p.order, it.p.w, it.p.h, it.rot ? 'ano' : 'ne', Math.round(it.x * 10) / 10, Math.round(it.y * 10) / 10, it.p.note || '', s.cut ? 'ano' : 'ne']);
+      rows.push([g.type.label, g.type.thick || '', s.idx, it.p.order, it.p.w, it.p.h, it.rot ? 'ano' : 'ne', Math.round(it.x * 10) / 10, Math.round(it.y * 10) / 10, it.p.note || '', s.cut ? 'ano' : 'ne']);
     return rows;
   }
   function showCopyFallback(text, msg) {
@@ -1273,31 +1727,48 @@ function sampleDemand() {
 
   /* ---------- Události ---------- */
   Object.values(inp).forEach(el => el.addEventListener('change', onSettingsChange));
+  els.typeList.addEventListener('change', onTypesChange);
+  els.typeList.addEventListener('click', e => {
+    const b = e.target.closest('[data-del]');
+    if (!b || settings.types.length <= 1) return;
+    settings.types = settings.types.filter(t => t.id !== b.dataset.del);
+    renderTypeEditor(); onTypesChange();
+  });
+  $('#addType').addEventListener('click', () => {
+    const {types} = readTypes();
+    const used = new Set(types.map(t => t.color));
+    const color = PALETTE.find(c => !used.has(c)) || PALETTE[types.length % PALETTE.length];
+    const last = types[types.length - 1] || {W: 2000, H: 1000};
+    settings.types = types.concat([{id: 't' + Date.now().toString(36), name: '', thick: null, W: last.W, H: last.H, color}]);
+    renderTypeEditor(); saveSettings(settings); renderSpec(); markStale();
+    const rows = els.typeList.querySelectorAll('.tname');
+    if (rows.length) rows[rows.length - 1].focus();
+  });
+  els.defType.addEventListener('change', () => { settings.defType = els.defType.value; saveSettings(settings); refreshParseInfo(); markStale(); });
+
   els.run.addEventListener('click', () => compute());
   els.text.addEventListener('input', () => { isSample = false; fileName = ''; markStale(); });
   els.text.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); compute(); } });
-  document.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target !== els.text) compute(); });
+  document.addEventListener('keydown', e => { if (els.shop.hidden && e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target !== els.text) compute(); });
   els.file.addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) loadFile(f); e.target.value = ''; });
   ['dragenter', 'dragover'].forEach(ev => els.drop.addEventListener(ev, e => { e.preventDefault(); els.drop.classList.add('over'); }));
   ['dragleave', 'drop'].forEach(ev => els.drop.addEventListener(ev, () => els.drop.classList.remove('over')));
   els.drop.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) loadFile(f); });
   $('#sampleBtn').addEventListener('click', () => { els.text.value = sampleDemand(); isSample = true; fileName = ''; compute(); });
   $('#clearBtn').addEventListener('click', () => { els.text.value = ''; isSample = false; fileName = ''; els.info.innerHTML = ''; markStale(); els.text.focus(); });
-  $('#tplBtn').addEventListener('click', e => copyText('Objednávka\tTyp skla\tŠířka\tVýška\tPočet\tPoznámka\n4101\tEI 30\t800\t600\t2\tdveře\n4102\tEI 60\t1200\t900\t1\t', 'Vzor zkopírován', e.currentTarget));
+  $('#tplBtn').addEventListener('click', e => copyText('Objednávka\tDruh skla\tŠířka\tVýška\tPočet\tPoznámka\n4101\t4 mm\t500\t400\t2\tdvířka\n4102\t5 mm\t650\t480\t1\t\n4103\t4 mm samočisticí\t420\t380\t1\t\n4104\tNightflame\t560\t430\t1\t', 'Vzor zkopírován', e.currentTarget));
 
   els.body.addEventListener('mouseover', e => { const pc = e.target.closest('.pc'); if (pc) setHL(pc.dataset.o); });
   els.body.addEventListener('mouseout', e => { const pc = e.target.closest('.pc'); if (pc && !(e.relatedTarget && pc.contains(e.relatedTarget))) setHL(pinned); });
   els.body.addEventListener('click', e => {
     const cb = e.target.closest('.cutbtn');
     if (cb) {
-      const card = cb.closest('.sheet'), sh = findSheet(card.dataset.g, Number(card.dataset.i));
-      if (!sh) return;
-      sh.cut = !sh.cut; sh.cutAt = sh.cut ? Date.now() : null;
-      card.classList.toggle('done', sh.cut);
-      cb.setAttribute('aria-pressed', String(sh.cut)); cb.innerHTML = cutBtnHTML(sh);
-      updateWork(); saveJob();
+      const card = cb.closest('.sheet'), g = groupById(card.dataset.g), sh = findSheet(card.dataset.g, Number(card.dataset.i));
+      if (sh) setCut(g, sh, !sh.cut);
       return;
     }
+    const sb = e.target.closest('.stepbtn');
+    if (sb) { const card = sb.closest('.sheet'); openShop(card.dataset.g, Number(card.dataset.i)); return; }
     const sref = e.target.closest('.sref');
     if (sref) { e.stopPropagation(); const card = document.getElementById(sref.dataset.target); const tr = sref.closest('tr'); if (tr && pinned !== tr.dataset.o) pin(tr.dataset.o, false); if (card) scrollToCard(card); return; }
     const pc = e.target.closest('.pc'); if (pc) { pin(pc.dataset.o, false); return; }
@@ -1311,7 +1782,8 @@ function sampleDemand() {
       return;
     }
     if (!lastResult) return;
-    const id = e.target.id;
+    const btn = e.target.closest('button'), id = btn && btn.id;
+    if (id === 'shopStart') openShop();
     if (id === 'clearCut') {
       const n = workStats(lastResult).cut;
       $('#clearCutWrap').innerHTML = `<span>Zrušit značku „uříznuto“ u ${fmt(n)} ${n === 1 ? 'tabule' : 'tabulí'}?</span><button type="button" class="btn btn-danger" id="clearCutYes">Ano, zrušit</button><button type="button" class="btn" id="clearCutNo">Ne</button>`;
@@ -1324,9 +1796,9 @@ function sampleDemand() {
       els.body.querySelectorAll('.cutbtn').forEach(b => { b.setAttribute('aria-pressed', 'false'); b.innerHTML = cutBtnHTML({}); });
       updateWork(); saveJob();
     }
-    if (id === 'copyPlan') copyText(planRows(lastResult).map(r => r.join('\t')).join('\n'), 'Zkopírováno ✓', e.target);
+    if (id === 'copyPlan') copyText(planRows(lastResult).map(r => r.join('\t')).join('\n'), 'Zkopírováno ✓', btn);
     if (id === 'csvPlan') {
-      const csv = '﻿' + planRows(lastResult).map(r => r.map(v => /[;"\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v).replace('.', ',')).join(';')).join('\r\n');
+      const csv = '\ufeff' + planRows(lastResult).map(r => r.map(v => /[;"\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v).replace('.', ',')).join(';')).join('\r\n');
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));
       a.download = `narezovy-plan-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -1345,8 +1817,7 @@ function sampleDemand() {
   const job = loadJob();
   if (job) {
     els.text.value = job.text || ''; fileName = job.fileName || ''; isSample = !!job.isSample; lastResult = job.result;
-    const parsed = parseDemand(els.text.value, settings.unit);
-    if (!parsed.error) renderParseInfo(parsed);
+    refreshParseInfo();
     renderResults(lastResult, {restored: job.savedAt});
   } else {
     els.text.value = sampleDemand(); isSample = true;
@@ -1354,5 +1825,4 @@ function sampleDemand() {
   }
 })();
 </script>
-
 </html>
